@@ -4,6 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
+    <list default="true" id="8af0d612-a530-4b09-b3f2-9caae3893722" name="Changes" comment="" />
     <list default="true" id="8af0d612-a530-4b09-b3f2-9caae3893722" name="Changes" comment="Adding Anthony's ID">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
@@ -45,6 +46,8 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
     "git-widget-placeholder": "Anthony's-Branch",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "G:/Github projects/ehotels-project",
@@ -73,6 +76,7 @@
       <option name="presentableId" value="Default" />
       <updated>1773339298205</updated>
       <workItem from="1773339299235" duration="691000" />
+      <workItem from="1773341169052" duration="345000" />
       <workItem from="1773341141077" duration="330000" />
     </task>
     <task id="LOCAL-00001" summary="Adding Anthony's ID">
