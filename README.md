@@ -2,8 +2,8 @@
 
 Group Members:
 -Peter Vanikiotis
--Anthony Appa-Ross
--Nilavan Athavan: 300354870
+-Nilavan Athavan: ID: 300354870
+-Anthony Appa-Ross, ID: 300348726
 
 #Project Structure
 
