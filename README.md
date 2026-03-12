@@ -1,9 +1,9 @@
 #eHotels Database Project
 
 Group Members:
--Peter Vanikiotis
--Nilavan Athavan: ID: 300354870
+-Peter Vanikiotis, ID: 300379232
 -Anthony Appa-Ross, ID: 300348726
+-Nilavan Athavan, ID: 300354870
 
 #Project Structure
 
