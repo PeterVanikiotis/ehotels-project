@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>eHotels Demo</title>
+</head>
+<body>
+<h1>eHotels Demo</h1>
+
+<button onclick="loadHotelChains()">Show Hotel Chains</button>
+<p id="status">Waiting...</p>
+<ul id="hotelChainList"></ul>
+
+<script>
+    function loadHotelChains() {
+        const status = document.getElementById("status");
+        const list = document.getElementById("hotelChainList");
+
+        status.textContent = "Button clicked";
+        list.innerHTML = "";
+
+        fetch("/hotel-chains")
+            .then(response => {
+                status.textContent = "Request sent: " + response.status;
+                return response.json();
+            })
+            .then(data => {
+                status.textContent = "Loaded " + data.length + " hotel chains";
+                data.forEach(chain => {
+                    const li = document.createElement("li");
+                    li.textContent =
+                        chain.chainName + " - " +
+                        chain.streetName + " " +
+                        chain.buildingNumber + ", " +
+                        chain.postalCode;
+                    list.appendChild(li);
+                });
+            })
+            .catch(error => {
+                status.textContent = "Error: " + error;
+                console.error(error);
+            });
+    }
+</script>
+</body>
+</html>
