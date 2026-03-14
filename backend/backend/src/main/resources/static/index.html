@@ -7,39 +7,23 @@
 <body>
 <h1>eHotels Demo</h1>
 
-<button onclick="loadHotelChains()">Show Hotel Chains</button>
-<p id="status">Waiting...</p>
+<button onclick="loadHotelChains()">Load Hotel Chains</button>
+
 <ul id="hotelChainList"></ul>
 
 <script>
-    function loadHotelChains() {
-        const status = document.getElementById("status");
-        const list = document.getElementById("hotelChainList");
+    async function loadHotelChains() {
+        const response = await fetch('/hotel-chains');
+        const hotelChains = await response.json();
 
-        status.textContent = "Button clicked";
-        list.innerHTML = "";
+        const list = document.getElementById('hotelChainList');
+        list.innerHTML = '';
 
-        fetch("/hotel-chains")
-            .then(response => {
-                status.textContent = "Request sent: " + response.status;
-                return response.json();
-            })
-            .then(data => {
-                status.textContent = "Loaded " + data.length + " hotel chains";
-                data.forEach(chain => {
-                    const li = document.createElement("li");
-                    li.textContent =
-                        chain.chainName + " - " +
-                        chain.streetName + " " +
-                        chain.buildingNumber + ", " +
-                        chain.postalCode;
-                    list.appendChild(li);
-                });
-            })
-            .catch(error => {
-                status.textContent = "Error: " + error;
-                console.error(error);
-            });
+        hotelChains.forEach(chain => {
+            const li = document.createElement('li');
+            li.textContent = `${chain.chainName} - ${chain.streetName} ${chain.buildingNumber}, ${chain.postalCode}`;
+            list.appendChild(li);
+        });
     }
 </script>
 </body>
