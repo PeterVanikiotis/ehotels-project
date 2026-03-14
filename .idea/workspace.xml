@@ -4,10 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8af0d612-a530-4b09-b3f2-9caae3893722" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="8af0d612-a530-4b09-b3f2-9caae3893722" name="Changes" comment="pulled to laptop and made small change to html">
+      <change afterPath="$PROJECT_DIR$/backend/backend/src/main/resources/static/customer.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/backend/src/main/resources/static/employee.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/backend/src/main/resources/populate.sql" beforeDir="false" afterPath="$PROJECT_DIR$/backend/backend/src/main/resources/populate.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/backend/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/backend/backend/src/main/resources/static/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -65,6 +66,16 @@
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/PeterVanikiotis/ehotels-project.git&quot;,
     &quot;accountId&quot;: &quot;e8c74e0d-c8cb-4f77-ab8d-aa094ab5462f&quot;
+  },
+  &quot;recentNewPullRequestHead&quot;: {
+    &quot;server&quot;: {
+      &quot;useHttp&quot;: false,
+      &quot;host&quot;: &quot;github.com&quot;,
+      &quot;port&quot;: null,
+      &quot;suffix&quot;: null
+    },
+    &quot;owner&quot;: &quot;PeterVanikiotis&quot;,
+    &quot;repository&quot;: &quot;ehotels-project&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -76,35 +87,35 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Build backend.executor": "Run",
-    "Gradle.C:/Users/peter/IdeaProjects/ehotels-project/backend/backend/build.gradle.executor": "Run",
-    "Gradle.C:/Users/peter/IdeaProjects/ehotels-project/backend/gradle/src/main/java/ca/ehotels/backend/repository/BackendApplication.java.executor": "Run",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "Spring Boot.BackendApplication.executor": "Run",
-    "git-widget-placeholder": "PeterLaptop",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/peter/IdeaProjects/ehotels-project/backend/backend/build.gradle",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Build backend.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.C:/Users/peter/IdeaProjects/ehotels-project/backend/backend/build.gradle.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.C:/Users/peter/IdeaProjects/ehotels-project/backend/gradle/src/main/java/ca/ehotels/backend/repository/BackendApplication.java.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;Spring Boot.BackendApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;PeterLaptop&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/peter/IdeaProjects/ehotels-project/backend/backend/build.gradle&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Spring Boot.BackendApplication">
     <configuration name="C:/Users/peter/IdeaProjects/ehotels-project/backend/gradle/src/main/java/ca/ehotels/backend/repository/BackendApplication.java" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
@@ -172,7 +183,9 @@
       <workItem from="1773465657148" duration="466000" />
       <workItem from="1773466135372" duration="382000" />
       <workItem from="1773466527853" duration="163000" />
-      <workItem from="1773505901806" duration="1326000" />
+      <workItem from="1773505901806" duration="1619000" />
+      <workItem from="1773507563742" duration="28000" />
+      <workItem from="1773508727183" duration="4609000" />
     </task>
     <task id="LOCAL-00001" summary="Adding Anthony's ID">
       <option name="closed" value="true" />
@@ -182,7 +195,15 @@
       <option name="project" value="LOCAL" />
       <updated>1773341336720</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="pulled to laptop and made small change to html">
+      <option name="closed" value="true" />
+      <created>1773507449824</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1773507449824</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -190,6 +211,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Adding Anthony's ID" />
-    <option name="LAST_COMMIT_MESSAGE" value="Adding Anthony's ID" />
+    <MESSAGE value="pulled to laptop and made small change to html" />
+    <option name="LAST_COMMIT_MESSAGE" value="pulled to laptop and made small change to html" />
   </component>
 </project>
