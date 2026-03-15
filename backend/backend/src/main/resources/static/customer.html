@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer - Search for a Room</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+            margin: 0;
+        }
+
+        .container {
+            width: 320px;
+            background: white;
+            padding: 20px 24px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-left: 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 18px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .chain-item {
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        .top-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-size: 14px;
+        }
+    </style>
+
+</head>
+<body>
+
+<a class="top-link" href="/index.html">← Back to home</a>
+
+<div class="container">
+    <h1>Search for a room</h1>
+    <h3>Select hotel chains</h3>
+
+    <div id="hotelChainList">
+        Loading hotel chains...
+    </div>
+</div>
+
+<script>
+    async function loadHotelChains() {
+        const container = document.getElementById("hotelChainList");
+
+        try {
+            const response = await fetch("/hotel-chains");
+            const chains = await response.json();
+
+            container.innerHTML = "";
+
+            chains.forEach(chain => {
+                const div = document.createElement("div");
+                div.className = "chain-item";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = chain.centralOfficeId;
+                checkbox.id = "chain-" + chain.centralOfficeId;
+                checkbox.name = "hotelChains";
+
+                const label = document.createElement("label");
+                label.htmlFor = checkbox.id;
+                label.innerText = chain.chainName;
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+
+                container.appendChild(div);
+            });
+
+        } catch (error) {
+            container.innerHTML = "Failed to load hotel chains.";
+            console.error(error);
+        }
+    }
+
+    window.onload = loadHotelChains;
+</script>
+
+</body>
+</html>
