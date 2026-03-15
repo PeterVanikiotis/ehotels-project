@@ -3,7 +3,8 @@ VALUES
     ('Maple Leaf Hotels', 'King Street West', '100', 'M5H 1J9'),
     ('Aurora Hospitality', 'Rue Sainte-Catherine Ouest', '2020', 'H3H 2T1'),
     ('Holiday Inn', 'West Hunt Club Rd.', '1070', 'K4G 729'),
-    ('Hilton Garden Inn', 'Alert Rd', '2400', 'K1V 1S1');
+    ('Hilton Garden Inn', 'Alert Rd', '2400', 'K1V 1S1'),
+    ('Mariott International','Fernwood Road', '10400', 'K1P 5R7');
 
 
 
@@ -15,7 +16,10 @@ VALUES
     (2, 'bookings@aurorahospitality.com'),
     (3, 'bookings@holidaninn.ca'),
     (3, 'info@holidayinn.ca'),
-    (4, 'info@hiltongardeninn.ca');
+    (4, 'info@hiltongardeninn.ca'),
+    (5, 'lodging.development@marriott.com'),
+    (5, 'Bonvoy.Program@marriott.com');
+
 
 
 INSERT INTO hotel_chain_phone (central_office_id, phone_number)
@@ -26,4 +30,6 @@ VALUES
     (2, '613-555-2021'),
     (3, '613-729-1020'),
     (3, '613-729-1021'),
-    (4, '613-818-1021');
+    (4, '613-818-1021'),
+    (5, '613-426-2935'),
+    (5, '613-282-3945');
