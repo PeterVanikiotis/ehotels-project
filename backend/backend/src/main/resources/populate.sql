@@ -1,3 +1,7 @@
+--this wipes the database so populate.sql can rebuild everything from scratch
+TRUNCATE TABLE hotel_chain RESTART IDENTITY CASCADE;
+
+--populate database
 INSERT INTO hotel_chain (chain_name, street_name, building_number, postal_code)
 VALUES
     ('Maple Leaf Hotels', 'King Street West', '100', 'M5H 1J9'),
