@@ -296,3 +296,70 @@ SELECT h.hotel_id,
 FROM hotel h
          JOIN room r ON h.hotel_id = r.hotel_id
 GROUP BY h.hotel_id, h.hotel_name;
+
+-- =========================================
+-- INDEX 1: room(hotel_id)
+-- Expected queries/data updates:
+-- This database frequently searches for all rooms belonging to a specific hotel,
+-- especially when joining the room table with the hotel table or when displaying
+-- rooms for a selected hotel in the UI.
+-- Why this index is useful:
+-- This index accelerates queries that filter or join on hotel_id by allowing the
+-- DBMS to find matching rooms more quickly instead of scanning the entire room table.
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_room_hotel_id
+    ON room(hotel_id);
+
+-- =========================================
+-- INDEX 2: hotel(area)
+-- Expected queries/data updates:
+-- This database is expected to support searches by geographic area, such as finding
+-- hotels in Downtown Ottawa, Gatineau Core, or other regions. It is also useful for
+-- the view that groups room availability by area.
+-- Why this index is useful:
+-- This index accelerates queries that filter hotels by area and helps grouping/querying
+-- by area perform faster, especially when the hotel table grows larger.
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_hotel_area
+    ON hotel(area);
+
+-- =========================================
+-- INDEX 3: booking(hotel_id, room_number, start_day, end_day)
+-- Expected queries/data updates:
+-- This database will frequently check whether a specific room is already booked during
+-- a given date range when customers search for available rooms or create a booking.
+-- New bookings will also be inserted regularly.
+-- Why this index is useful:
+-- This composite index accelerates availability queries by helping the DBMS quickly
+-- locate bookings for a particular room and compare the requested dates against existing
+-- booking intervals, rather than scanning the entire booking table.
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_booking_room_dates
+    ON booking(hotel_id, room_number, start_day, end_day);
+
+-- =========================================
+-- INDEX 4: renting(hotel_id, room_number, start_datetime, end_datetime)
+-- Expected queries/data updates:
+-- This database will frequently check whether a room is currently being rented during
+-- a given time period, especially when converting bookings into rentings and when
+-- determining room availability in the application.
+-- Why this index is useful:
+-- This composite index accelerates queries that search for active or overlapping rentings
+-- for a specific room by narrowing the search using hotel_id, room_number, and the rental
+-- time interval.
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_renting_room_dates
+    ON renting(hotel_id, room_number, start_datetime, end_datetime);
+
+-- =========================================
+-- INDEX 5: hotel_chain(chain_name)
+-- Expected queries/data updates:
+-- This database supports searches and filters by hotel chain name, such as finding all
+-- hotels or all managers belonging to a given chain. Chain names are also used in joins
+-- and reporting queries.
+-- Why this index is useful:
+-- This index accelerates queries that search or filter by chain_name, allowing faster
+-- retrieval of the corresponding hotel chain rows.
+-- =========================================
+CREATE INDEX IF NOT EXISTS idx_hotel_chain_name
+    ON hotel_chain(chain_name);
