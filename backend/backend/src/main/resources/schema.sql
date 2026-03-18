@@ -363,3 +363,141 @@ CREATE INDEX IF NOT EXISTS idx_renting_room_dates
 -- =========================================
 CREATE INDEX IF NOT EXISTS idx_hotel_chain_name
     ON hotel_chain(chain_name);
+
+-- =========================================
+-- TRIGGER FUNCTION 1:
+-- Prevent overlapping bookings for the same room
+-- Also ensures bookings do not overlap with existing rentings
+-- and prevents booking damaged rooms
+-- =========================================
+CREATE OR REPLACE FUNCTION prevent_overlapping_bookings()
+RETURNS TRIGGER
+AS '
+BEGIN
+    -- Check against existing bookings
+    IF EXISTS (
+        SELECT 1
+        FROM booking b
+        WHERE b.hotel_id = NEW.hotel_id
+          AND b.room_number = NEW.room_number
+          AND b.booking_id <> COALESCE(NEW.booking_id, -1)
+          AND b.archive_status = FALSE
+          AND NEW.start_day < b.end_day
+          AND NEW.end_day > b.start_day
+    ) THEN
+        RAISE EXCEPTION ''This room is already booked during the selected dates.'';
+    END IF;
+
+    -- Check against existing rentings
+    IF EXISTS (
+        SELECT 1
+        FROM renting r
+        WHERE r.hotel_id = NEW.hotel_id
+          AND r.room_number = NEW.room_number
+          AND r.archive_status = FALSE
+          AND NEW.start_day < r.end_datetime::date
+          AND NEW.end_day > r.start_datetime::date
+    ) THEN
+        RAISE EXCEPTION ''This room is currently rented during the selected dates.'';
+    END IF;
+
+    -- Check whether the room is damaged
+    IF EXISTS (
+        SELECT 1
+        FROM room rm
+        WHERE rm.hotel_id = NEW.hotel_id
+          AND rm.room_number = NEW.room_number
+          AND rm.damage_status <> ''none''
+    ) THEN
+        RAISE EXCEPTION ''This room cannot be booked because it is marked as %.'', (
+            SELECT rm.damage_status
+            FROM room rm
+            WHERE rm.hotel_id = NEW.hotel_id
+              AND rm.room_number = NEW.room_number
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+'
+LANGUAGE plpgsql;
+
+-- =========================================
+-- TRIGGER 1:
+-- Fires before inserting or updating a booking
+-- =========================================
+DROP TRIGGER IF EXISTS trg_prevent_overlapping_bookings ON booking;
+
+CREATE TRIGGER trg_prevent_overlapping_bookings
+    BEFORE INSERT OR UPDATE ON booking
+                         FOR EACH ROW
+                         EXECUTE FUNCTION prevent_overlapping_bookings();
+
+-- =========================================
+-- TRIGGER FUNCTION 2:
+-- Prevent overlapping rentings for the same room
+-- Also ensures rentings do not overlap with existing bookings
+-- and prevents renting damaged rooms
+-- =========================================
+CREATE OR REPLACE FUNCTION prevent_overlapping_rentings()
+RETURNS TRIGGER
+AS '
+BEGIN
+    -- Check against existing rentings
+    IF EXISTS (
+        SELECT 1
+        FROM renting r
+        WHERE r.hotel_id = NEW.hotel_id
+          AND r.room_number = NEW.room_number
+          AND r.renting_id <> COALESCE(NEW.renting_id, -1)
+          AND r.archive_status = FALSE
+          AND NEW.start_datetime < r.end_datetime
+          AND NEW.end_datetime > r.start_datetime
+    ) THEN
+        RAISE EXCEPTION ''This room is already rented during the selected time period.'';
+    END IF;
+
+    -- Check against existing bookings
+    IF EXISTS (
+        SELECT 1
+        FROM booking b
+        WHERE b.hotel_id = NEW.hotel_id
+          AND b.room_number = NEW.room_number
+          AND b.archive_status = FALSE
+          AND NEW.start_datetime::date < b.end_day
+          AND NEW.end_datetime::date > b.start_day
+    ) THEN
+        RAISE EXCEPTION ''This room is already booked during the selected time period.'';
+    END IF;
+
+    -- Check whether the room is damaged
+    IF EXISTS (
+        SELECT 1
+        FROM room rm
+        WHERE rm.hotel_id = NEW.hotel_id
+          AND rm.room_number = NEW.room_number
+          AND rm.damage_status <> ''none''
+    ) THEN
+        RAISE EXCEPTION ''This room cannot be rented because it is marked as %.'', (
+            SELECT rm.damage_status
+            FROM room rm
+            WHERE rm.hotel_id = NEW.hotel_id
+              AND rm.room_number = NEW.room_number
+        );
+    END IF;
+
+    RETURN NEW;
+END;
+'
+LANGUAGE plpgsql;
+
+-- =========================================
+-- TRIGGER 2:
+-- Fires before inserting or updating a renting
+-- =========================================
+DROP TRIGGER IF EXISTS trg_prevent_overlapping_rentings ON renting;
+
+CREATE TRIGGER trg_prevent_overlapping_rentings
+    BEFORE INSERT OR UPDATE ON renting
+                         FOR EACH ROW
+                         EXECUTE FUNCTION prevent_overlapping_rentings();

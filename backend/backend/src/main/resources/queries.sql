@@ -96,3 +96,4 @@ WHERE r.price = (
     FROM room
 )
 ORDER BY c.last_name, c.first_name;
+
