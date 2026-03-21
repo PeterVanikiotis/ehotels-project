@@ -909,7 +909,6 @@ VALUES
 
 INSERT INTO booking (driving_license_number, hotel_id, room_number, start_day, end_day, archive_status, check_in_time, check_out_time, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
 VALUES
-    ('DL00004ON', 4, 101, '2026-03-18', '2026-03-19', FALSE, NULL, NULL, 'Liam Jackson', 'Maple Gatineau Hotel', 'Gatineau Core', 200),
     ('DL00001ON', 1, 101, '2026-04-10', '2026-04-12', TRUE, '2026-04-10 15:00:00', '2026-04-12 11:00:00', 'Emma Taylor', 'Maple Downtown Hotel', 'Downtown Ottawa', 170),
     ('DL00002ON', 2, 102, '2026-04-11', '2026-04-13', TRUE, '2026-04-11 15:00:00', '2026-04-13 11:00:00', 'Noah Anderson', 'Maple ByWard Hotel', 'ByWard Market', 215),
     ('DL00003ON', 3, 103, '2026-04-12', '2026-04-14', TRUE, '2026-04-12 15:00:00', '2026-04-14 11:00:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260),

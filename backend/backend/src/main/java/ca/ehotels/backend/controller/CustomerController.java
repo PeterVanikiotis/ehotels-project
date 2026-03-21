@@ -1,12 +1,12 @@
 package ca.ehotels.backend.controller;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
+import ca.ehotels.backend.model.CreateBookingRequest;
+import ca.ehotels.backend.repository.BookingRepository;
 import ca.ehotels.backend.repository.CustomerSearchRepository;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,9 +17,14 @@ import java.util.Map;
 public class CustomerController {
 
     private final CustomerSearchRepository customerSearchRepository;
+    private final BookingRepository bookingRepository;
 
-    public CustomerController(CustomerSearchRepository customerSearchRepository) {
+    public CustomerController(
+            CustomerSearchRepository customerSearchRepository,
+            BookingRepository bookingRepository
+    ) {
         this.customerSearchRepository = customerSearchRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @GetMapping("/search-rooms")
@@ -57,5 +62,20 @@ public class CustomerController {
     @GetMapping("/areas")
     public List<String> getAreas() {
         return customerSearchRepository.getAreas();
+    }
+
+    @PostMapping("/book")
+    public ResponseEntity<String> createBooking(@RequestBody CreateBookingRequest request) {
+        if (!request.getEndDate().isAfter(request.getStartDate())) {
+            return ResponseEntity.badRequest().body("End date must be after start date.");
+        }
+
+        int rowsInserted = bookingRepository.createBooking(request);
+
+        if (rowsInserted == 0) {
+            return ResponseEntity.badRequest().body("Booking failed. Customer or room was not found.");
+        }
+
+        return ResponseEntity.ok("Booking created successfully.");
     }
 }

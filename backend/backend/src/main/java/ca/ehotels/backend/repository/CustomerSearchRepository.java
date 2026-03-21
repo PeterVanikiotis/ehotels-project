@@ -40,11 +40,21 @@ public class CustomerSearchRepository {
                 h.area,
                 h.rating,
                 h.number_of_rooms AS total_rooms,
+                h.street_name,
+                h.street_number,
+                h.postal_code,
+                h.city,
+                h.province_state,
+                h.country,
                 r.room_number,
                 r.price,
                 r.room_capacity,
                 r.room_view_type,
-                r.damage_status
+                r.damage_status,
+                r.has_tv,
+                r.has_air_conditioner,
+                r.has_fridge,
+                r.room_extended_status
             FROM room r
             JOIN hotel h
               ON r.hotel_id = h.hotel_id
@@ -148,11 +158,25 @@ public class CustomerSearchRepository {
             dto.setArea(rs.getString("area"));
             dto.setRating(rs.getInt("rating"));
             dto.setTotalRooms(rs.getInt("total_rooms"));
+
+            dto.setStreetName(rs.getString("street_name"));
+            dto.setStreetNumber(rs.getString("street_number"));
+            dto.setPostalCode(rs.getString("postal_code"));
+            dto.setCity(rs.getString("city"));
+            dto.setProvinceState(rs.getString("province_state"));
+            dto.setCountry(rs.getString("country"));
+
             dto.setRoomNumber(rs.getInt("room_number"));
             dto.setPrice(rs.getBigDecimal("price"));
             dto.setRoomCapacity(rs.getInt("room_capacity"));
             dto.setRoomViewType(rs.getString("room_view_type"));
             dto.setDamageStatus(rs.getString("damage_status"));
+
+            dto.setHasTv(rs.getBoolean("has_tv"));
+            dto.setHasAirConditioner(rs.getBoolean("has_air_conditioner"));
+            dto.setHasFridge(rs.getBoolean("has_fridge"));
+            dto.setRoomExtendedStatus(rs.getBoolean("room_extended_status"));
+
             return dto;
         }
     }
