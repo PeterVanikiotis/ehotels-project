@@ -3,44 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Customer - Search for a Room</title>
-
     <style>
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding: 40px;
             margin: 0;
-        }
-
-        .container {
-            width: 320px;
-            background: white;
-            padding: 20px 24px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            margin-left: 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-top: 0;
-            margin-bottom: 18px;
-        }
-
-        h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-        }
-
-        .chain-item {
-            padding: 6px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        label {
-            font-size: 14px;
         }
 
         .top-link {
@@ -50,59 +18,350 @@
             color: #1f4e79;
             font-size: 14px;
         }
-    </style>
 
+        .container {
+            max-width: 1050px;
+            background: white;
+            padding: 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 22px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input, select, button {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #1f4e79;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: #163a5a;
+        }
+
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
+        .chain-box {
+            grid-column: 1 / -1;
+        }
+
+        .chain-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(200px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chain-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message {
+            margin: 14px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .info { background: #eef4ff; color: #1f4e79; }
+        .success { background: #edf9f0; color: #1f6b3b; }
+        .error { background: #fdeeee; color: #a33a3a; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        th {
+            background: #eef3f8;
+        }
+    </style>
 </head>
+
 <body>
 
 <a class="top-link" href="/index.html">← Back to home</a>
 
 <div class="container">
-    <h1>Search for a room</h1>
-    <h3>Select hotel chains</h3>
+    <h1>Search for available rooms</h1>
 
-    <div id="hotelChainList">
-        Loading hotel chains...
+    <div class="form-grid">
+        <div class="field">
+            <label>Start date</label>
+            <input type="date" id="startDate">
+        </div>
+
+        <div class="field">
+            <label>End date</label>
+            <input type="date" id="endDate">
+        </div>
+
+        <div class="field">
+            <label>Minimum room capacity</label>
+            <input type="number" id="capacity">
+        </div>
+
+        <div class="field">
+            <label>Area</label>
+            <select id="area">
+                <option value="">Any area</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label>Rating</label>
+            <select id="rating">
+                <option value="">Any</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label>Minimum total rooms</label>
+            <input type="number" id="minTotalRooms">
+        </div>
+
+        <div class="field">
+            <label>Max price</label>
+            <input type="number" id="maxPrice">
+        </div>
+
+        <div class="chain-box">
+            <label>Hotel chains</label>
+            <div id="hotelChainList" class="chain-list"></div>
+        </div>
     </div>
+
+    <button id="searchButton">Search rooms</button>
+
+    <div id="message" class="message"></div>
+
+    <table id="resultsTable" style="display:none;">
+        <thead>
+        <tr>
+            <th>Chain</th>
+            <th>Hotel</th>
+            <th>Area</th>
+            <th>Rating</th>
+            <th>Total Rooms</th>
+            <th>Room #</th>
+            <th>Capacity</th>
+            <th>View</th>
+            <th>Price</th>
+        </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+    </table>
 </div>
 
 <script>
-    async function loadHotelChains() {
-        const container = document.getElementById("hotelChainList");
+    const STORAGE_KEY = "customerForm";
 
-        try {
-            const response = await fetch("/hotel-chains");
-            const chains = await response.json();
+    function showMessage(text, type="info", autoHide=false){
+        const m = document.getElementById("message");
+        m.innerText = text;
+        m.className = "message " + type;
+        m.style.display = "block";
 
-            container.innerHTML = "";
-
-            chains.forEach(chain => {
-                const div = document.createElement("div");
-                div.className = "chain-item";
-
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.value = chain.centralOfficeId;
-                checkbox.id = "chain-" + chain.centralOfficeId;
-                checkbox.name = "hotelChains";
-
-                const label = document.createElement("label");
-                label.htmlFor = checkbox.id;
-                label.innerText = chain.chainName;
-
-                div.appendChild(checkbox);
-                div.appendChild(label);
-
-                container.appendChild(div);
-            });
-
-        } catch (error) {
-            container.innerHTML = "Failed to load hotel chains.";
-            console.error(error);
+        if(autoHide){
+            setTimeout(()=> m.style.display="none", 2500);
         }
     }
 
-    window.onload = loadHotelChains;
+    function saveForm(){
+        const data = {
+            startDate: startDate.value,
+            endDate: endDate.value,
+            capacity: capacity.value,
+            area: area.value,
+            rating: rating.value,
+            minTotalRooms: minTotalRooms.value,
+            maxPrice: maxPrice.value,
+            chainIds: getSelectedChains()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadForm(){
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+        startDate.value = data.startDate || "";
+        endDate.value = data.endDate || "";
+        capacity.value = data.capacity || "";
+        rating.value = data.rating || "";
+        minTotalRooms.value = data.minTotalRooms || "";
+        maxPrice.value = data.maxPrice || "";
+        return data;
+    }
+
+    function getSelectedChains(){
+        return Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+            .map(cb=>cb.value);
+    }
+
+    async function loadChains(){
+        const data = loadForm();
+
+        const res = await fetch("/api/customer/hotel-chains");
+        const chains = await res.json();
+
+        hotelChainList.innerHTML="";
+        chains.forEach(c=>{
+            const div=document.createElement("div");
+            div.className="chain-item";
+
+            const cb=document.createElement("input");
+            cb.type="checkbox";
+            cb.name="chain";
+            cb.value=c.central_office_id;
+
+            if(data.chainIds && data.chainIds.includes(String(c.central_office_id))){
+                cb.checked=true;
+            }
+
+            cb.onchange=saveForm;
+
+            div.appendChild(cb);
+            div.append(" "+c.chain_name);
+            hotelChainList.appendChild(div);
+        });
+    }
+
+    async function loadAreas(){
+        const data = loadForm();
+
+        const res = await fetch("/api/customer/areas");
+        const areas = await res.json();
+
+        area.innerHTML='<option value="">Any area</option>';
+        areas.forEach(a=>{
+            const opt=document.createElement("option");
+            opt.value=a;
+            opt.textContent=a;
+            area.appendChild(opt);
+        });
+
+        if(data.area) area.value=data.area;
+    }
+
+    async function searchRooms(){
+        saveForm();
+
+        if(!startDate.value || !endDate.value){
+            showMessage("Enter start & end date","error");
+            return;
+        }
+
+        const btn=searchButton;
+        btn.disabled=true;
+        btn.innerText="Searching...";
+        showMessage("Searching...","info");
+
+        const params=new URLSearchParams();
+        params.append("startDate",startDate.value);
+        params.append("endDate",endDate.value);
+
+        if(capacity.value) params.append("capacity",capacity.value);
+        if(area.value) params.append("area",area.value);
+        if(rating.value) params.append("rating",rating.value);
+        if(minTotalRooms.value) params.append("minTotalRooms",minTotalRooms.value);
+        if(maxPrice.value) params.append("maxPrice",maxPrice.value);
+
+        getSelectedChains().forEach(id=>params.append("chainIds",id));
+
+        try{
+            const res=await fetch(`/api/customer/search-rooms?${params}`);
+
+            if(!res.ok) throw new Error();
+
+            const rooms=await res.json();
+
+            resultsBody.innerHTML="";
+            if(!rooms.length){
+                showMessage("No rooms found","info");
+                resultsTable.style.display="none";
+                return;
+            }
+
+            showMessage(`${rooms.length} rooms found`,"success");
+            resultsTable.style.display="table";
+
+            rooms.forEach(r=>{
+                const row=document.createElement("tr");
+                row.innerHTML=`
+                <td>${r.chainName}</td>
+                <td>${r.hotelName}</td>
+                <td>${r.area}</td>
+                <td>${r.rating}</td>
+                <td>${r.totalRooms}</td>
+                <td>${r.roomNumber}</td>
+                <td>${r.roomCapacity}</td>
+                <td>${r.roomViewType}</td>
+                <td>$${r.price}</td>
+            `;
+                resultsBody.appendChild(row);
+            });
+
+        }catch(e){
+            showMessage("Search failed. Try again.","error",true);
+            resultsTable.style.display="none";
+        }finally{
+            btn.disabled=false;
+            btn.innerText="Search rooms";
+        }
+    }
+
+    document.getElementById("searchButton").onclick=searchRooms;
+    window.onload=async ()=>{
+        loadForm();
+        await loadAreas();
+        await loadChains();
+    };
 </script>
 
 </body>

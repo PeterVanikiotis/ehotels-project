@@ -1,0 +1,159 @@
+package ca.ehotels.backend.repository;
+
+import ca.ehotels.backend.model.AvailableRoomDto;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+@Repository
+public class CustomerSearchRepository {
+
+    private final NamedParameterJdbcTemplate jdbcTemplate;
+
+    public CustomerSearchRepository(NamedParameterJdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public List<AvailableRoomDto> searchAvailableRooms(
+            LocalDate startDate,
+            LocalDate endDate,
+            Integer capacity,
+            String area,
+            List<Integer> chainIds,
+            Integer rating,
+            Integer minTotalRooms,
+            Double maxPrice
+    ) {
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                h.hotel_id,
+                h.hotel_name,
+                hc.chain_name,
+                h.area,
+                h.rating,
+                h.number_of_rooms AS total_rooms,
+                r.room_number,
+                r.price,
+                r.room_capacity,
+                r.room_view_type,
+                r.damage_status
+            FROM room r
+            JOIN hotel h
+              ON r.hotel_id = h.hotel_id
+            JOIN hotel_chain hc
+              ON h.central_office_id = hc.central_office_id
+            WHERE r.damage_status = 'none'
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM booking b
+                    WHERE b.hotel_id = r.hotel_id
+                      AND b.room_number = r.room_number
+                      AND b.archive_status = FALSE
+                      AND b.start_day < :endDate
+                      AND b.end_day > :startDate
+              )
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM renting rt
+                    WHERE rt.hotel_id = r.hotel_id
+                      AND rt.room_number = r.room_number
+                      AND rt.archive_status = FALSE
+                      AND rt.start_datetime::date < :endDate
+                      AND rt.end_datetime::date > :startDate
+              )
+            """);
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("startDate", startDate)
+                .addValue("endDate", endDate);
+
+        if (capacity != null) {
+            sql.append(" AND r.room_capacity >= :capacity");
+            params.addValue("capacity", capacity);
+        }
+
+        if (area != null && !area.isBlank()) {
+            sql.append(" AND LOWER(TRIM(h.area)) = LOWER(TRIM(:area))");
+            params.addValue("area", area.trim());
+        }
+
+        if (rating != null) {
+            sql.append(" AND h.rating = :rating");
+            params.addValue("rating", rating);
+        }
+
+        if (minTotalRooms != null) {
+            sql.append(" AND h.number_of_rooms >= :minTotalRooms");
+            params.addValue("minTotalRooms", minTotalRooms);
+        }
+
+        if (maxPrice != null) {
+            sql.append(" AND r.price <= :maxPrice");
+            params.addValue("maxPrice", maxPrice);
+        }
+
+        if (chainIds != null && !chainIds.isEmpty()) {
+            sql.append(" AND h.central_office_id IN (:chainIds)");
+            params.addValue("chainIds", chainIds);
+        }
+
+        sql.append("""
+            ORDER BY hc.chain_name, h.hotel_name, r.price, r.room_number
+            """);
+
+        return jdbcTemplate.query(sql.toString(), params, new AvailableRoomRowMapper());
+    }
+
+    public List<Map<String, Object>> getHotelChains() {
+        String sql = """
+            SELECT central_office_id, chain_name
+            FROM hotel_chain
+            ORDER BY chain_name
+            """;
+
+        return jdbcTemplate.queryForList(sql, Collections.emptyMap());
+    }
+
+    public List<String> getAreas() {
+        String sql = """
+            SELECT DISTINCT TRIM(area) AS area
+            FROM hotel
+            WHERE area IS NOT NULL
+              AND TRIM(area) <> ''
+            ORDER BY area
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                Collections.emptyMap(),
+                (rs, rowNum) -> rs.getString("area")
+        );
+    }
+
+    private static class AvailableRoomRowMapper implements RowMapper<AvailableRoomDto> {
+        @Override
+        public AvailableRoomDto mapRow(ResultSet rs, int rowNum) throws SQLException {
+            AvailableRoomDto dto = new AvailableRoomDto();
+            dto.setHotelId(rs.getInt("hotel_id"));
+            dto.setHotelName(rs.getString("hotel_name"));
+            dto.setChainName(rs.getString("chain_name"));
+            dto.setArea(rs.getString("area"));
+            dto.setRating(rs.getInt("rating"));
+            dto.setTotalRooms(rs.getInt("total_rooms"));
+            dto.setRoomNumber(rs.getInt("room_number"));
+            dto.setPrice(rs.getBigDecimal("price"));
+            dto.setRoomCapacity(rs.getInt("room_capacity"));
+            dto.setRoomViewType(rs.getString("room_view_type"));
+            dto.setDamageStatus(rs.getString("damage_status"));
+            return dto;
+        }
+    }
+}
