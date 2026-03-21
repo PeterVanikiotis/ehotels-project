@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1050px;
+            max-width: 1150px;
             background: white;
             padding: 24px 28px;
             border-radius: 12px;
@@ -112,10 +112,48 @@
             border: 1px solid #ddd;
             padding: 10px;
             font-size: 14px;
+            text-align: left;
         }
 
         th {
             background: #eef3f8;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .close-button {
+            position: absolute;
+            right: 18px;
+            top: 14px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-details p {
+            margin: 8px 0;
         }
     </style>
 </head>
@@ -129,47 +167,47 @@
 
     <div class="form-grid">
         <div class="field">
-            <label>Start date</label>
+            <label for="startDate">Start date</label>
             <input type="date" id="startDate">
         </div>
 
         <div class="field">
-            <label>End date</label>
+            <label for="endDate">End date</label>
             <input type="date" id="endDate">
         </div>
 
         <div class="field">
-            <label>Minimum room capacity</label>
-            <input type="number" id="capacity">
+            <label for="capacity">Minimum room capacity</label>
+            <input type="number" id="capacity" min="1">
         </div>
 
         <div class="field">
-            <label>Area</label>
+            <label for="area">Area</label>
             <select id="area">
                 <option value="">Any area</option>
             </select>
         </div>
 
         <div class="field">
-            <label>Rating</label>
+            <label for="rating">Rating</label>
             <select id="rating">
                 <option value="">Any</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
+                <option value="1">1-star</option>
+                <option value="2">2-star</option>
+                <option value="3">3-star</option>
+                <option value="4">4-star</option>
+                <option value="5">5-star</option>
             </select>
         </div>
 
         <div class="field">
-            <label>Minimum total rooms</label>
-            <input type="number" id="minTotalRooms">
+            <label for="minTotalRooms">Minimum total rooms</label>
+            <input type="number" id="minTotalRooms" min="1">
         </div>
 
         <div class="field">
-            <label>Max price</label>
-            <input type="number" id="maxPrice">
+            <label for="maxPrice">Maximum room price</label>
+            <input type="number" id="maxPrice" min="1" step="0.01">
         </div>
 
         <div class="chain-box">
@@ -178,7 +216,7 @@
         </div>
     </div>
 
-    <button id="searchButton">Search rooms</button>
+    <button id="searchButton" type="button">Search rooms</button>
 
     <div id="message" class="message"></div>
 
@@ -194,27 +232,64 @@
             <th>Capacity</th>
             <th>View</th>
             <th>Price</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody id="resultsBody"></tbody>
     </table>
 </div>
 
+<div id="bookingModal" class="modal">
+    <div class="modal-content">
+        <span id="closeModal" class="close-button">&times;</span>
+        <h2>Book Room</h2>
+
+        <div id="modalRoomDetails" class="modal-details"></div>
+
+        <div class="field" style="margin-top: 18px;">
+            <label for="licenseNumber">Customer driving license number</label>
+            <input type="text" id="licenseNumber" placeholder="Enter driving license number">
+        </div>
+
+        <button id="confirmBookingButton" type="button" style="margin-top: 16px;">Confirm Booking</button>
+    </div>
+</div>
+
 <script>
     const STORAGE_KEY = "customerForm";
+    let selectedRoom = null;
 
-    function showMessage(text, type="info", autoHide=false){
-        const m = document.getElementById("message");
-        m.innerText = text;
-        m.className = "message " + type;
-        m.style.display = "block";
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const capacity = document.getElementById("capacity");
+    const area = document.getElementById("area");
+    const rating = document.getElementById("rating");
+    const minTotalRooms = document.getElementById("minTotalRooms");
+    const maxPrice = document.getElementById("maxPrice");
+    const hotelChainList = document.getElementById("hotelChainList");
+    const searchButton = document.getElementById("searchButton");
+    const message = document.getElementById("message");
+    const resultsTable = document.getElementById("resultsTable");
+    const resultsBody = document.getElementById("resultsBody");
 
-        if(autoHide){
-            setTimeout(()=> m.style.display="none", 2500);
+    function showMessage(text, type = "info", autoHide = false) {
+        message.innerText = text;
+        message.className = "message " + type;
+        message.style.display = "block";
+
+        if (autoHide) {
+            setTimeout(() => {
+                message.style.display = "none";
+            }, 2500);
         }
     }
 
-    function saveForm(){
+    function getSelectedChains() {
+        return Array.from(document.querySelectorAll('input[name="chain"]:checked'))
+            .map(cb => cb.value);
+    }
+
+    function saveForm() {
         const data = {
             startDate: startDate.value,
             endDate: endDate.value,
@@ -228,8 +303,8 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
-    function loadForm(){
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+    function loadForm() {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
         startDate.value = data.startDate || "";
         endDate.value = data.endDate || "";
         capacity.value = data.capacity || "";
@@ -239,129 +314,235 @@
         return data;
     }
 
-    function getSelectedChains(){
-        return Array.from(document.querySelectorAll('input[name="chain"]:checked'))
-            .map(cb=>cb.value);
-    }
+    async function loadChains() {
+        const saved = loadForm();
+        const response = await fetch("/api/customer/hotel-chains");
+        const chains = await response.json();
 
-    async function loadChains(){
-        const data = loadForm();
+        hotelChainList.innerHTML = "";
 
-        const res = await fetch("/api/customer/hotel-chains");
-        const chains = await res.json();
+        chains.forEach(chain => {
+            const div = document.createElement("div");
+            div.className = "chain-item";
 
-        hotelChainList.innerHTML="";
-        chains.forEach(c=>{
-            const div=document.createElement("div");
-            div.className="chain-item";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.name = "chain";
+            checkbox.value = chain.central_office_id;
 
-            const cb=document.createElement("input");
-            cb.type="checkbox";
-            cb.name="chain";
-            cb.value=c.central_office_id;
-
-            if(data.chainIds && data.chainIds.includes(String(c.central_office_id))){
-                cb.checked=true;
+            if (saved.chainIds && saved.chainIds.includes(String(chain.central_office_id))) {
+                checkbox.checked = true;
             }
 
-            cb.onchange=saveForm;
+            checkbox.addEventListener("change", saveForm);
 
-            div.appendChild(cb);
-            div.append(" "+c.chain_name);
+            const label = document.createElement("label");
+            label.textContent = chain.chain_name;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
             hotelChainList.appendChild(div);
         });
     }
 
-    async function loadAreas(){
-        const data = loadForm();
+    async function loadAreas() {
+        const saved = loadForm();
+        const response = await fetch("/api/customer/areas");
+        const areas = await response.json();
 
-        const res = await fetch("/api/customer/areas");
-        const areas = await res.json();
+        area.innerHTML = '<option value="">Any area</option>';
 
-        area.innerHTML='<option value="">Any area</option>';
-        areas.forEach(a=>{
-            const opt=document.createElement("option");
-            opt.value=a;
-            opt.textContent=a;
-            area.appendChild(opt);
+        areas.forEach(a => {
+            const option = document.createElement("option");
+            option.value = a;
+            option.textContent = a;
+            area.appendChild(option);
         });
 
-        if(data.area) area.value=data.area;
+        if (saved.area) {
+            area.value = saved.area;
+        }
     }
 
-    async function searchRooms(){
+    function yesNo(value) {
+        return value ? "Yes" : "No";
+    }
+
+    function openBookingModal(room) {
+        selectedRoom = room;
+
+        document.getElementById("modalRoomDetails").innerHTML = `
+            <p><strong>Hotel:</strong> ${room.hotelName}</p>
+            <p><strong>Chain:</strong> ${room.chainName}</p>
+            <p><strong>Area:</strong> ${room.area}</p>
+            <p><strong>Rating:</strong> ${room.rating}</p>
+            <p><strong>Address:</strong> ${room.streetNumber} ${room.streetName}, ${room.city}, ${room.provinceState}, ${room.country}, ${room.postalCode}</p>
+            <p><strong>Room Number:</strong> ${room.roomNumber}</p>
+            <p><strong>Capacity:</strong> ${room.roomCapacity}</p>
+            <p><strong>View:</strong> ${room.roomViewType}</p>
+            <p><strong>Price:</strong> $${room.price}</p>
+            <p><strong>TV:</strong> ${yesNo(room.hasTv)}</p>
+            <p><strong>Air Conditioner:</strong> ${yesNo(room.hasAirConditioner)}</p>
+            <p><strong>Fridge:</strong> ${yesNo(room.hasFridge)}</p>
+            <p><strong>Can be extended:</strong> ${yesNo(room.roomExtendedStatus)}</p>
+        `;
+
+        document.getElementById("bookingModal").style.display = "flex";
+    }
+
+    function closeBookingModal() {
+        document.getElementById("bookingModal").style.display = "none";
+        document.getElementById("licenseNumber").value = "";
+        selectedRoom = null;
+    }
+
+    async function searchRooms() {
         saveForm();
 
-        if(!startDate.value || !endDate.value){
-            showMessage("Enter start & end date","error");
+        if (!startDate.value || !endDate.value) {
+            showMessage("Please enter both a start date and an end date.", "error");
+            resultsTable.style.display = "none";
             return;
         }
 
-        const btn=searchButton;
-        btn.disabled=true;
-        btn.innerText="Searching...";
-        showMessage("Searching...","info");
+        const params = new URLSearchParams();
+        params.append("startDate", startDate.value);
+        params.append("endDate", endDate.value);
 
-        const params=new URLSearchParams();
-        params.append("startDate",startDate.value);
-        params.append("endDate",endDate.value);
+        if (capacity.value) params.append("capacity", capacity.value);
+        if (area.value) params.append("area", area.value);
+        if (rating.value) params.append("rating", rating.value);
+        if (minTotalRooms.value) params.append("minTotalRooms", minTotalRooms.value);
+        if (maxPrice.value) params.append("maxPrice", maxPrice.value);
 
-        if(capacity.value) params.append("capacity",capacity.value);
-        if(area.value) params.append("area",area.value);
-        if(rating.value) params.append("rating",rating.value);
-        if(minTotalRooms.value) params.append("minTotalRooms",minTotalRooms.value);
-        if(maxPrice.value) params.append("maxPrice",maxPrice.value);
+        getSelectedChains().forEach(id => params.append("chainIds", id));
 
-        getSelectedChains().forEach(id=>params.append("chainIds",id));
+        searchButton.disabled = true;
+        searchButton.innerText = "Searching...";
+        showMessage("Searching...", "info");
 
-        try{
-            const res=await fetch(`/api/customer/search-rooms?${params}`);
+        try {
+            const response = await fetch(`/api/customer/search-rooms?${params.toString()}`);
 
-            if(!res.ok) throw new Error();
+            if (!response.ok) {
+                throw new Error("Search request failed.");
+            }
 
-            const rooms=await res.json();
+            const rooms = await response.json();
+            resultsBody.innerHTML = "";
 
-            resultsBody.innerHTML="";
-            if(!rooms.length){
-                showMessage("No rooms found","info");
-                resultsTable.style.display="none";
+            if (rooms.length === 0) {
+                showMessage("No available rooms matched your criteria.", "info");
+                resultsTable.style.display = "none";
                 return;
             }
 
-            showMessage(`${rooms.length} rooms found`,"success");
-            resultsTable.style.display="table";
+            showMessage(`${rooms.length} available room(s) found.`, "success");
+            resultsTable.style.display = "table";
 
-            rooms.forEach(r=>{
-                const row=document.createElement("tr");
-                row.innerHTML=`
-                <td>${r.chainName}</td>
-                <td>${r.hotelName}</td>
-                <td>${r.area}</td>
-                <td>${r.rating}</td>
-                <td>${r.totalRooms}</td>
-                <td>${r.roomNumber}</td>
-                <td>${r.roomCapacity}</td>
-                <td>${r.roomViewType}</td>
-                <td>$${r.price}</td>
-            `;
+            rooms.forEach(room => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${room.chainName}</td>
+                    <td>${room.hotelName}</td>
+                    <td>${room.area}</td>
+                    <td>${room.rating}</td>
+                    <td>${room.totalRooms}</td>
+                    <td>${room.roomNumber}</td>
+                    <td>${room.roomCapacity}</td>
+                    <td>${room.roomViewType}</td>
+                    <td>$${room.price}</td>
+                `;
+
+                const actionCell = document.createElement("td");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = "Book";
+                button.addEventListener("click", () => openBookingModal(room));
+                actionCell.appendChild(button);
+                row.appendChild(actionCell);
+
                 resultsBody.appendChild(row);
             });
 
-        }catch(e){
-            showMessage("Search failed. Try again.","error",true);
-            resultsTable.style.display="none";
-        }finally{
-            btn.disabled=false;
-            btn.innerText="Search rooms";
+        } catch (error) {
+            console.error(error);
+            showMessage("Failed to search rooms.", "error", true);
+            resultsTable.style.display = "none";
+        } finally {
+            searchButton.disabled = false;
+            searchButton.innerText = "Search rooms";
         }
     }
 
-    document.getElementById("searchButton").onclick=searchRooms;
+    document.getElementById("confirmBookingButton").addEventListener("click", async () => {
+        if (!selectedRoom) return;
+
+        const drivingLicenseNumber = document.getElementById("licenseNumber").value.trim();
+
+        if (!drivingLicenseNumber) {
+            showMessage("Please enter a driving license number.", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/customer/book", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    drivingLicenseNumber: drivingLicenseNumber,
+                    hotelId: selectedRoom.hotelId,
+                    roomNumber: selectedRoom.roomNumber,
+                    startDate: startDate.value,
+                    endDate: endDate.value
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Booking failed.");
+            }
+
+            showMessage("Booking created successfully.", "success");
+            closeBookingModal();
+            await searchRooms();
+
+        } catch (error) {
+            console.error(error);
+            showMessage(error.message || "Booking failed.", "error");
+        }
+    });
+
+    document.getElementById("closeModal").addEventListener("click", closeBookingModal);
+
+    window.addEventListener("click", (event) => {
+        if (event.target === document.getElementById("bookingModal")) {
+            closeBookingModal();
+        }
+    });
+
+    [
+        startDate, endDate, capacity, area, rating, minTotalRooms, maxPrice
+    ].forEach(el => {
+        el.addEventListener("input", saveForm);
+        el.addEventListener("change", saveForm);
+    });
+
+    startDate.addEventListener("change", () => {
+        endDate.min = startDate.value;
+        saveForm();
+    });
+
+    searchButton.addEventListener("click", searchRooms);
+
     window.onload = async () => {
         const todayStr = new Date().toISOString().split("T")[0];
-
-        document.getElementById("startDate").min = todayStr;
-        document.getElementById("endDate").min = todayStr;
+        startDate.min = todayStr;
+        endDate.min = todayStr;
 
         loadForm();
         await loadAreas();
