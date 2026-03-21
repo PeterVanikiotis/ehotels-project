@@ -357,7 +357,12 @@
     }
 
     document.getElementById("searchButton").onclick=searchRooms;
-    window.onload=async ()=>{
+    window.onload = async () => {
+        const todayStr = new Date().toISOString().split("T")[0];
+
+        document.getElementById("startDate").min = todayStr;
+        document.getElementById("endDate").min = todayStr;
+
         loadForm();
         await loadAreas();
         await loadChains();
