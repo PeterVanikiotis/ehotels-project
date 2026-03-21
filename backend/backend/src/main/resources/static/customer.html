@@ -254,6 +254,16 @@
         <button id="confirmBookingButton" type="button" style="margin-top: 16px;">Confirm Booking</button>
     </div>
 </div>
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <span id="closeSuccessModal" class="close-button">&times;</span>
+        <h2>Booking Confirmed 🎉</h2>
+
+        <div id="successMessage" class="modal-details"></div>
+
+        <button id="closeSuccessButton" style="margin-top: 16px;">OK</button>
+    </div>
+</div>
 
 <script>
     const STORAGE_KEY = "customerForm";
@@ -271,6 +281,15 @@
     const message = document.getElementById("message");
     const resultsTable = document.getElementById("resultsTable");
     const resultsBody = document.getElementById("resultsBody");
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr + "T00:00:00");
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    }
 
     function showMessage(text, type = "info", autoHide = false) {
         message.innerText = text;
@@ -507,7 +526,18 @@
                 throw new Error(text || "Booking failed.");
             }
 
-            showMessage("Booking created successfully.", "success");
+            const prettyStart = formatDate(startDate.value);
+            const prettyEnd = formatDate(endDate.value);
+
+            document.getElementById("successMessage").innerHTML = `
+                <p><strong>${selectedRoom.hotelName}</strong> (Room ${selectedRoom.roomNumber})</p>
+                <p>Check-in: ${prettyStart} at 3:00 PM</p>
+                <p>Check-out: ${prettyEnd} at 11:00 AM</p>
+                <p style="margin-top:10px;">Payment can be completed upon arrival.</p>
+            `;
+
+            document.getElementById("successModal").style.display = "flex";
+
             closeBookingModal();
             await searchRooms();
 
@@ -548,6 +578,12 @@
         await loadAreas();
         await loadChains();
     };
+    function closeSuccessModal() {
+        document.getElementById("successModal").style.display = "none";
+    }
+
+    document.getElementById("closeSuccessModal").addEventListener("click", closeSuccessModal);
+    document.getElementById("closeSuccessButton").addEventListener("click", closeSuccessModal);
 </script>
 
 </body>
