@@ -12,8 +12,17 @@
             padding: 40px;
         }
 
+        .top-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-size: 14px;
+        }
+
         .container {
-            max-width: 700px;
+            max-width: 1150px;
+            margin: 0 auto;
             background: white;
             padding: 30px;
             border-radius: 12px;
@@ -22,18 +31,173 @@
 
         h1 {
             margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 14px;
         }
 
         p {
             color: #444;
         }
 
-        .top-link {
-            display: inline-block;
-            margin-bottom: 18px;
-            text-decoration: none;
-            color: #1f4e79;
+        .section {
+            margin-top: 30px;
+            padding-top: 24px;
+            border-top: 1px solid #e3e3e3;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: bold;
             font-size: 14px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #1f4e79;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #163a59;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 18px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .message.info {
+            background: #eef4fb;
+            color: #1f4e79;
+        }
+
+        .message.success {
+            background: #edf8ef;
+            color: #22643a;
+        }
+
+        .message.error {
+            background: #fdeeee;
+            color: #a33a3a;
+        }
+
+        .employee-summary {
+            margin-top: 18px;
+            padding: 14px;
+            border-radius: 10px;
+            background: #f7fbff;
+            border: 1px solid #d7e6f4;
+            display: none;
+        }
+
+        .employee-summary p {
+            margin: 6px 0;
+        }
+
+        .results-wrapper {
+            margin-top: 22px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            display: none;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f0f4f8;
+        }
+
+        .placeholder-box {
+            background: #fafafa;
+            border: 1px dashed #ccc;
+            border-radius: 10px;
+            padding: 18px;
+            color: #666;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.45);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .modal-details p {
+            margin: 8px 0;
+        }
+
+        .modal-actions {
+            margin-top: 18px;
         }
     </style>
 </head>
@@ -43,8 +207,452 @@
 
 <div class="container">
     <h1>Employee Interface</h1>
-    <p>This page will later contain employee functions such as managing data, creating rentals, and converting bookings to rentals.</p>
+    <p>Enter your employee SSN and the dates to load available rooms from the hotel where you work.</p>
+
+    <div class="section" style="margin-top:0; padding-top:0; border-top:none;">
+        <h2>Section 1: Direct room renting</h2>
+
+        <div class="form-grid">
+            <div class="field">
+                <label for="employeeSsn">Employee SSN</label>
+                <input type="text" id="employeeSsn" placeholder="Enter your employee SSN">
+            </div>
+
+            <div class="field">
+                <label for="startDate">Start date</label>
+                <input type="date" id="startDate">
+            </div>
+
+            <div class="field">
+                <label for="endDate">End date</label>
+                <input type="date" id="endDate">
+            </div>
+        </div>
+
+        <button id="loadRoomsButton" type="button">Load available rooms</button>
+
+        <div id="message" class="message"></div>
+        <div id="employeeSummary" class="employee-summary"></div>
+
+        <div class="results-wrapper">
+            <table id="resultsTable">
+                <thead>
+                <tr>
+                    <th>Chain</th>
+                    <th>Hotel</th>
+                    <th>Area</th>
+                    <th>Rating</th>
+                    <th>Total Rooms</th>
+                    <th>Room #</th>
+                    <th>Capacity</th>
+                    <th>View</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Section 2: Turn booking into renting</h2>
+        <div class="placeholder-box">
+            We can add this after Section 1 works properly.
+        </div>
+    </div>
 </div>
+
+<div id="rentingModal" class="modal">
+    <div class="modal-content">
+        <span id="closeModal" class="close-button">&times;</span>
+        <h2>Rent Room</h2>
+
+        <div id="modalRoomDetails" class="modal-details"></div>
+
+        <div class="field" style="margin-top: 18px;">
+            <label for="licenseNumber">Customer driving license number</label>
+            <input type="text" id="licenseNumber" placeholder="Enter customer driving license number">
+        </div>
+        <button id="openCreateCustomerModalButton" type="button" style="margin-top:10px;">
+            Add new customer
+        </button>
+
+        <div class="modal-actions">
+            <button id="confirmRentingButton" type="button">Confirm Renting</button>
+        </div>
+    </div>
+</div>
+
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <span id="closeSuccessModal" class="close-button">&times;</span>
+        <h2>Renting created</h2>
+        <div id="successMessage" class="modal-details"></div>
+        <div class="modal-actions">
+            <button id="closeSuccessButton" type="button">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="createCustomerModal" class="modal">
+    <div class="modal-content">
+        <span id="closeCreateCustomerModal" class="close-button">&times;</span>
+        <h2>Create Customer</h2>
+
+        <div class="field">
+            <label>Driving license number</label>
+            <input type="text" id="newCustomerLicense">
+        </div>
+
+        <div class="field">
+            <label>First name</label>
+            <input type="text" id="newCustomerFirstName">
+        </div>
+
+        <div class="field">
+            <label>Last name</label>
+            <input type="text" id="newCustomerLastName">
+        </div>
+
+        <div class="field">
+            <label>Street name</label>
+            <input type="text" id="newCustomerStreetName">
+        </div>
+
+        <div class="field">
+            <label>Street number</label>
+            <input type="text" id="newCustomerStreetNumber">
+        </div>
+
+        <div class="field">
+            <label>Postal code</label>
+            <input type="text" id="newCustomerPostalCode">
+        </div>
+
+        <div class="field">
+            <label>Phone number</label>
+            <input type="text" id="newCustomerPhone">
+        </div>
+
+        <button id="confirmCreateCustomerButton" style="margin-top:15px;">
+            Create Customer
+        </button>
+    </div>
+</div>
+
+<script>
+    let selectedRoom = null;
+    let loggedInEmployee = null;
+
+    const employeeSsnInput = document.getElementById("employeeSsn");
+    const startDateInput = document.getElementById("startDate");
+    const endDateInput = document.getElementById("endDate");
+    const loadRoomsButton = document.getElementById("loadRoomsButton");
+    const messageBox = document.getElementById("message");
+    const employeeSummary = document.getElementById("employeeSummary");
+    const resultsTable = document.getElementById("resultsTable");
+    const resultsBody = document.getElementById("resultsBody");
+
+    document.getElementById("openCreateCustomerModalButton").addEventListener("click", () => {
+        document.getElementById("createCustomerModal").style.display = "flex";
+    });
+
+    document.getElementById("closeCreateCustomerModal").addEventListener("click", () => {
+        document.getElementById("createCustomerModal").style.display = "none";
+    });
+
+    document.getElementById("confirmCreateCustomerButton").addEventListener("click", async () => {
+        const drivingLicenseNumber = document.getElementById("newCustomerLicense").value.trim();
+        const firstName = document.getElementById("newCustomerFirstName").value.trim();
+        const lastName = document.getElementById("newCustomerLastName").value.trim();
+        const streetName = document.getElementById("newCustomerStreetName").value.trim();
+        const streetNumber = document.getElementById("newCustomerStreetNumber").value.trim();
+        const postalCode = document.getElementById("newCustomerPostalCode").value.trim();
+        const phoneNumber = document.getElementById("newCustomerPhone").value.trim();
+
+        if (!drivingLicenseNumber || !firstName || !lastName || !streetName || !streetNumber || !postalCode || !phoneNumber) {
+            showMessage("Fill all customer fields", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/customer/create", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    drivingLicenseNumber,
+                    firstName,
+                    lastName,
+                    streetName,
+                    streetNumber,
+                    postalCode,
+                    phoneNumber
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) throw new Error(text);
+
+            showMessage("Customer created!", "success");
+
+            // ⭐ AUTO-FILL INTO RENTING FORM
+            document.getElementById("licenseNumber").value = drivingLicenseNumber;
+
+            document.getElementById("createCustomerModal").style.display = "none";
+
+        } catch (err) {
+            showMessage(err.message, "error");
+        }
+    });
+
+    function showMessage(text, type) {
+        messageBox.textContent = text;
+        messageBox.className = "message " + type;
+        messageBox.style.display = "block";
+    }
+
+    function hideMessage() {
+        messageBox.style.display = "none";
+    }
+
+    function showEmployeeSummary(employee) {
+        employeeSummary.innerHTML = `
+            <p><strong>Employee:</strong> ${employee.employeeName}</p>
+            <p><strong>SSN:</strong> ${employee.ssn}</p>
+            <p><strong>Hotel:</strong> ${employee.hotelName}</p>
+            <p><strong>Area:</strong> ${employee.area}</p>
+            <p><strong>Chain:</strong> ${employee.chainName}</p>
+        `;
+        employeeSummary.style.display = "block";
+    }
+
+    function hideEmployeeSummary() {
+        employeeSummary.style.display = "none";
+        employeeSummary.innerHTML = "";
+    }
+
+    function yesNo(value) {
+        return value ? "Yes" : "No";
+    }
+
+    function formatDatePretty(dateValue) {
+        const d = new Date(dateValue + "T00:00:00");
+        return d.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    }
+
+    function openRentingModal(room) {
+        selectedRoom = room;
+
+        document.getElementById("modalRoomDetails").innerHTML = `
+            <p><strong>Hotel:</strong> ${room.hotelName}</p>
+            <p><strong>Chain:</strong> ${room.chainName}</p>
+            <p><strong>Area:</strong> ${room.area}</p>
+            <p><strong>Rating:</strong> ${room.rating}</p>
+            <p><strong>Address:</strong> ${room.streetNumber} ${room.streetName}, ${room.city}, ${room.provinceState}, ${room.country}, ${room.postalCode}</p>
+            <p><strong>Room Number:</strong> ${room.roomNumber}</p>
+            <p><strong>Capacity:</strong> ${room.roomCapacity}</p>
+            <p><strong>View:</strong> ${room.roomViewType}</p>
+            <p><strong>Price:</strong> $${room.price}</p>
+            <p><strong>TV:</strong> ${yesNo(room.hasTv)}</p>
+            <p><strong>Air Conditioner:</strong> ${yesNo(room.hasAirConditioner)}</p>
+            <p><strong>Fridge:</strong> ${yesNo(room.hasFridge)}</p>
+            <p><strong>Can be extended:</strong> ${yesNo(room.roomExtendedStatus)}</p>
+        `;
+
+        document.getElementById("licenseNumber").value = "";
+        document.getElementById("rentingModal").style.display = "flex";
+    }
+
+    function closeRentingModal() {
+        document.getElementById("rentingModal").style.display = "none";
+        document.getElementById("licenseNumber").value = "";
+        selectedRoom = null;
+    }
+
+    function closeSuccessModal() {
+        document.getElementById("successModal").style.display = "none";
+    }
+
+    async function loadAvailableRooms() {
+        hideMessage();
+        hideEmployeeSummary();
+        resultsBody.innerHTML = "";
+        resultsTable.style.display = "none";
+
+        const ssn = employeeSsnInput.value.trim();
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!ssn) {
+            showMessage("Please enter an employee SSN.", "error");
+            return;
+        }
+
+        if (!startDate || !endDate) {
+            showMessage("Please enter both a start date and an end date.", "error");
+            return;
+        }
+
+        if (endDate <= startDate) {
+            showMessage("End date must be after start date.", "error");
+            return;
+        }
+
+        loadRoomsButton.disabled = true;
+        loadRoomsButton.textContent = "Loading...";
+
+        try {
+            const infoResponse = await fetch(`/api/employee/info?ssn=${encodeURIComponent(ssn)}`);
+            if (!infoResponse.ok) {
+                const text = await infoResponse.text();
+                throw new Error(text || "Employee not found.");
+            }
+
+            loggedInEmployee = await infoResponse.json();
+            showEmployeeSummary(loggedInEmployee);
+
+            const params = new URLSearchParams({
+                ssn: ssn,
+                startDate: startDate,
+                endDate: endDate
+            });
+
+            const roomsResponse = await fetch(`/api/employee/available-rooms?${params.toString()}`);
+            if (!roomsResponse.ok) {
+                const text = await roomsResponse.text();
+                throw new Error(text || "Could not load available rooms.");
+            }
+
+            const rooms = await roomsResponse.json();
+
+            if (rooms.length === 0) {
+                showMessage("No available rooms were found for this hotel during the selected dates.", "info");
+                return;
+            }
+
+            rooms.forEach(room => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${room.chainName}</td>
+                    <td>${room.hotelName}</td>
+                    <td>${room.area}</td>
+                    <td>${room.rating}</td>
+                    <td>${room.totalRooms}</td>
+                    <td>${room.roomNumber}</td>
+                    <td>${room.roomCapacity}</td>
+                    <td>${room.roomViewType}</td>
+                    <td>$${room.price}</td>
+                `;
+
+                const actionCell = document.createElement("td");
+                const rentButton = document.createElement("button");
+                rentButton.textContent = "Rent";
+                rentButton.type = "button";
+                rentButton.addEventListener("click", () => openRentingModal(room));
+
+                actionCell.appendChild(rentButton);
+                row.appendChild(actionCell);
+                resultsBody.appendChild(row);
+            });
+
+            resultsTable.style.display = "table";
+            showMessage(`Found ${rooms.length} available room(s).`, "success");
+
+        } catch (error) {
+            showMessage(error.message || "Something went wrong.", "error");
+        } finally {
+            loadRoomsButton.disabled = false;
+            loadRoomsButton.textContent = "Load available rooms";
+        }
+    }
+
+    async function confirmRenting() {
+        const ssn = employeeSsnInput.value.trim();
+        const drivingLicenseNumber = document.getElementById("licenseNumber").value.trim();
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!selectedRoom) {
+            showMessage("No room selected.", "error");
+            return;
+        }
+
+        if (!drivingLicenseNumber) {
+            showMessage("Please enter a customer driving license number.", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/employee/rent", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ssn: ssn,
+                    drivingLicenseNumber: drivingLicenseNumber,
+                    hotelId: selectedRoom.hotelId,
+                    roomNumber: selectedRoom.roomNumber,
+                    startDate: startDate,
+                    endDate: endDate
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Renting failed.");
+            }
+
+            document.getElementById("successMessage").innerHTML = `
+                <p><strong>Hotel:</strong> ${selectedRoom.hotelName}</p>
+                <p><strong>Room:</strong> ${selectedRoom.roomNumber}</p>
+                <p><strong>Customer license:</strong> ${drivingLicenseNumber}</p>
+                <p><strong>Check-in:</strong> ${formatDatePretty(startDate)} at 3:00 PM</p>
+                <p><strong>Check-out:</strong> ${formatDatePretty(endDate)} at 11:00 AM</p>
+            `;
+
+            closeRentingModal();
+            document.getElementById("successModal").style.display = "flex";
+            await loadAvailableRooms();
+
+        } catch (error) {
+            showMessage(error.message || "Renting failed.", "error");
+        }
+    }
+
+    document.getElementById("loadRoomsButton").addEventListener("click", loadAvailableRooms);
+    document.getElementById("confirmRentingButton").addEventListener("click", confirmRenting);
+    document.getElementById("closeModal").addEventListener("click", closeRentingModal);
+    document.getElementById("closeSuccessModal").addEventListener("click", closeSuccessModal);
+    document.getElementById("closeSuccessButton").addEventListener("click", closeSuccessModal);
+
+    window.addEventListener("click", function(event) {
+        if (event.target === document.getElementById("rentingModal")) {
+            closeRentingModal();
+        }
+        if (event.target === document.getElementById("successModal")) {
+            closeSuccessModal();
+        }
+    });
+
+    window.onload = function() {
+        const today = new Date().toISOString().split("T")[0];
+        startDateInput.min = today;
+        endDateInput.min = today;
+
+        startDateInput.addEventListener("change", function() {
+            endDateInput.min = startDateInput.value;
+        });
+    };
+</script>
 
 </body>
 </html>

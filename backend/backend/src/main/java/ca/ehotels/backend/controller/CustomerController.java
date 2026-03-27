@@ -4,9 +4,12 @@ import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.CreateBookingRequest;
 import ca.ehotels.backend.repository.BookingRepository;
 import ca.ehotels.backend.repository.CustomerSearchRepository;
+import ca.ehotels.backend.model.CreateCustomerRequest;
+import ca.ehotels.backend.repository.CustomerRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,13 +21,16 @@ public class CustomerController {
 
     private final CustomerSearchRepository customerSearchRepository;
     private final BookingRepository bookingRepository;
+    private final CustomerRepository customerRepository;
 
     public CustomerController(
             CustomerSearchRepository customerSearchRepository,
-            BookingRepository bookingRepository
+            BookingRepository bookingRepository,
+            CustomerRepository customerRepository
     ) {
         this.customerSearchRepository = customerSearchRepository;
         this.bookingRepository = bookingRepository;
+        this.customerRepository = customerRepository;
     }
 
     @GetMapping("/search-rooms")
@@ -77,5 +83,33 @@ public class CustomerController {
         }
 
         return ResponseEntity.ok("Booking created successfully.");
+    }
+    @PostMapping("/create")
+    public ResponseEntity<String> createCustomer(@RequestBody CreateCustomerRequest request) {
+        if (isBlank(request.getDrivingLicenseNumber())
+                || isBlank(request.getFirstName())
+                || isBlank(request.getLastName())
+                || isBlank(request.getStreetName())
+                || isBlank(request.getStreetNumber())
+                || isBlank(request.getPostalCode())
+                || isBlank(request.getPhoneNumber())) {
+            return ResponseEntity.badRequest().body("Please fill in all customer fields.");
+        }
+
+        try {
+            int rowsInserted = customerRepository.createCustomer(request);
+
+            if (rowsInserted < 2) {
+                return ResponseEntity.badRequest().body("Customer creation failed.");
+            }
+
+            return ResponseEntity.ok("Customer created successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Customer creation failed. That licence or phone may already exist.");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
