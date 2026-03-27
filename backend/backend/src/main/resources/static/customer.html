@@ -216,7 +216,10 @@
         </div>
     </div>
 
-    <button id="searchButton" type="button">Search rooms</button>
+    <div style="display:flex; gap:12px; margin-top: 10px;">
+        <button id="searchButton" type="button">Search rooms</button>
+        <button id="openCreateCustomerModalButton" type="button">Become a customer</button>
+    </div>
 
     <div id="message" class="message"></div>
 
@@ -265,6 +268,52 @@
     </div>
 </div>
 
+<div id="createCustomerModal" class="modal">
+    <div class="modal-content">
+        <span id="closeCreateCustomerModal" class="close-button">&times;</span>
+        <h2>Become a customer</h2>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerLicense">Driving license number</label>
+            <input type="text" id="newCustomerLicense" placeholder="Enter driving license number">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerFirstName">First name</label>
+            <input type="text" id="newCustomerFirstName" placeholder="Enter first name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerLastName">Last name</label>
+            <input type="text" id="newCustomerLastName" placeholder="Enter last name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerStreetName">Street name</label>
+            <input type="text" id="newCustomerStreetName" placeholder="Enter street name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerStreetNumber">Street number</label>
+            <input type="text" id="newCustomerStreetNumber" placeholder="Enter street number">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerPostalCode">Postal code</label>
+            <input type="text" id="newCustomerPostalCode" placeholder="Enter postal code">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerPhone">Phone number</label>
+            <input type="text" id="newCustomerPhone" placeholder="Enter phone number">
+        </div>
+
+        <button id="confirmCreateCustomerButton" type="button" style="margin-top: 16px;">
+            Create customer
+        </button>
+    </div>
+</div>
+
 <script>
     const STORAGE_KEY = "customerForm";
     let selectedRoom = null;
@@ -281,6 +330,73 @@
     const message = document.getElementById("message");
     const resultsTable = document.getElementById("resultsTable");
     const resultsBody = document.getElementById("resultsBody");
+
+    function openCreateCustomerModal() {
+        document.getElementById("createCustomerModal").style.display = "flex";
+    }
+
+    function closeCreateCustomerModal() {
+        document.getElementById("createCustomerModal").style.display = "none";
+    }
+
+    document.getElementById("openCreateCustomerModalButton").addEventListener("click", openCreateCustomerModal);
+    document.getElementById("closeCreateCustomerModal").addEventListener("click", closeCreateCustomerModal);
+
+    document.getElementById("confirmCreateCustomerButton").addEventListener("click", async () => {
+        const drivingLicenseNumber = document.getElementById("newCustomerLicense").value.trim();
+        const firstName = document.getElementById("newCustomerFirstName").value.trim();
+        const lastName = document.getElementById("newCustomerLastName").value.trim();
+        const streetName = document.getElementById("newCustomerStreetName").value.trim();
+        const streetNumber = document.getElementById("newCustomerStreetNumber").value.trim();
+        const postalCode = document.getElementById("newCustomerPostalCode").value.trim();
+        const phoneNumber = document.getElementById("newCustomerPhone").value.trim();
+
+        if (!drivingLicenseNumber || !firstName || !lastName || !streetName || !streetNumber || !postalCode || !phoneNumber) {
+            showMessage("Please fill in all customer fields.", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/customer/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    drivingLicenseNumber,
+                    firstName,
+                    lastName,
+                    streetName,
+                    streetNumber,
+                    postalCode,
+                    phoneNumber
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Customer creation failed.");
+            }
+
+            showMessage("Customer created successfully.", "success", true);
+
+            const bookingLicenseInput = document.getElementById("licenseNumber");
+            if (bookingLicenseInput) {
+                bookingLicenseInput.value = drivingLicenseNumber;
+            }
+
+            closeCreateCustomerModal();
+        } catch (error) {
+            showMessage(error.message || "Customer creation failed.", "error");
+        }
+    });
+
+    window.addEventListener("click", (event) => {
+        if (event.target === document.getElementById("createCustomerModal")) {
+            closeCreateCustomerModal();
+        }
+    });
 
     function formatDate(dateStr) {
         const date = new Date(dateStr + "T00:00:00");
