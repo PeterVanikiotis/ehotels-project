@@ -10,21 +10,51 @@ public class CreateRentingRequest {
     private LocalDate startDate;
     private LocalDate endDate;
 
-    public String getSsn() { return ssn; }
-    public void setSsn(String ssn) { this.ssn = ssn; }
+    public String getSsn() {
+        return ssn;
+    }
 
-    public String getDrivingLicenseNumber() { return drivingLicenseNumber; }
-    public void setDrivingLicenseNumber(String drivingLicenseNumber) { this.drivingLicenseNumber = drivingLicenseNumber; }
+    public void setSsn(String ssn) {
+        this.ssn = ssn;
+    }
 
-    public Integer getHotelId() { return hotelId; }
-    public void setHotelId(Integer hotelId) { this.hotelId = hotelId; }
+    public String getDrivingLicenseNumber() {
+        return drivingLicenseNumber;
+    }
 
-    public Integer getRoomNumber() { return roomNumber; }
-    public void setRoomNumber(Integer roomNumber) { this.roomNumber = roomNumber; }
+    public void setDrivingLicenseNumber(String drivingLicenseNumber) {
+        this.drivingLicenseNumber = drivingLicenseNumber;
+    }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public Integer getHotelId() {
+        return hotelId;
+    }
 
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public void setHotelId(Integer hotelId) {
+        this.hotelId = hotelId;
+    }
+
+    public Integer getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(Integer roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
 }

@@ -374,6 +374,11 @@ CREATE OR REPLACE FUNCTION prevent_overlapping_bookings()
 RETURNS TRIGGER
 AS '
 BEGIN
+    -- If the booking is being archived, do not run overlap checks
+    IF NEW.archive_status = TRUE THEN
+        RETURN NEW;
+    END IF;
+
     -- Check against existing bookings
     IF EXISTS (
         SELECT 1
