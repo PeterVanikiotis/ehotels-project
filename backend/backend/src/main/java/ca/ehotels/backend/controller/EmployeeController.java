@@ -1,6 +1,8 @@
 package ca.ehotels.backend.controller;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
+import ca.ehotels.backend.model.BookingDto;
+import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
 import ca.ehotels.backend.model.EmployeeInfoDto;
 import ca.ehotels.backend.repository.EmployeeRepository;
@@ -55,6 +57,22 @@ public class EmployeeController {
 
     @PostMapping("/rent")
     public ResponseEntity<String> createRenting(@RequestBody CreateRentingRequest request) {
+        if (request.getSsn() == null || request.getSsn().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Employee SSN is required.");
+        }
+
+        if (request.getDrivingLicenseNumber() == null || request.getDrivingLicenseNumber().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Customer driving license number is required.");
+        }
+
+        if (request.getHotelId() == null || request.getRoomNumber() == null) {
+            return ResponseEntity.badRequest().body("Hotel and room are required.");
+        }
+
+        if (request.getStartDate() == null || request.getEndDate() == null) {
+            return ResponseEntity.badRequest().body("Start and end dates are required.");
+        }
+
         if (!request.getEndDate().isAfter(request.getStartDate())) {
             return ResponseEntity.badRequest().body("End date must be after start date.");
         }
@@ -62,11 +80,40 @@ public class EmployeeController {
         int rowsInserted = employeeRepository.createDirectRenting(request);
 
         if (rowsInserted == 0) {
-            return ResponseEntity.badRequest().body(
-                    "Renting failed. Employee, room, or customer was not found."
-            );
+            return ResponseEntity.badRequest().body("Renting failed. Employee, room, or customer was not found.");
         }
 
         return ResponseEntity.ok("Renting created successfully.");
+    }
+
+    @GetMapping("/bookings")
+    public ResponseEntity<?> getBookings(@RequestParam String ssn) {
+        EmployeeInfoDto employee = employeeRepository.getEmployeeInfo(ssn);
+
+        if (employee == null) {
+            return ResponseEntity.badRequest().body("Employee was not found.");
+        }
+
+        List<BookingDto> bookings = employeeRepository.getActiveBookingsForEmployeeHotel(ssn);
+        return ResponseEntity.ok(bookings);
+    }
+
+    @PostMapping("/convert-booking-to-renting")
+    public ResponseEntity<String> convertBookingToRenting(@RequestBody ConvertBookingRequest request) {
+        if (request.getSsn() == null || request.getSsn().trim().isEmpty() || request.getBookingId() == null) {
+            return ResponseEntity.badRequest().body("Employee SSN and booking ID are required.");
+        }
+
+        try {
+            int rows = employeeRepository.convertBookingToRenting(request);
+
+            if (rows == 0) {
+                return ResponseEntity.badRequest().body("Conversion failed. Booking was not found or is not active.");
+            }
+
+            return ResponseEntity.ok("Booking converted to renting successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Conversion failed.");
+        }
     }
 }

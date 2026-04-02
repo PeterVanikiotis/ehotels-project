@@ -152,14 +152,6 @@
             background: #f0f4f8;
         }
 
-        .placeholder-box {
-            background: #fafafa;
-            border: 1px dashed #ccc;
-            border-radius: 10px;
-            padding: 18px;
-            color: #666;
-        }
-
         .modal {
             display: none;
             position: fixed;
@@ -257,8 +249,27 @@
 
     <div class="section">
         <h2>Section 2: Turn booking into renting</h2>
-        <div class="placeholder-box">
-            We can add this after Section 1 works properly.
+        <p>Load active bookings for the hotel where you work, then convert a booking into a renting when the customer checks in.</p>
+
+        <button id="loadBookingsButton" type="button">Load active bookings</button>
+
+        <div class="results-wrapper">
+            <table id="bookingsTable">
+                <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Customer</th>
+                    <th>License</th>
+                    <th>Hotel</th>
+                    <th>Room #</th>
+                    <th>Start Day</th>
+                    <th>End Day</th>
+                    <th>Price</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="bookingsBody"></tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -341,18 +352,35 @@
     </div>
 </div>
 
+<div id="convertBookingModal" class="modal">
+    <div class="modal-content">
+        <span id="closeConvertBookingModal" class="close-button">&times;</span>
+        <h2>Turn Booking into Renting</h2>
+
+        <div id="convertBookingDetails" class="modal-details"></div>
+
+        <div class="modal-actions">
+            <button id="confirmConvertBookingButton" type="button">Confirm Conversion</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let selectedRoom = null;
+    let selectedBooking = null;
     let loggedInEmployee = null;
 
     const employeeSsnInput = document.getElementById("employeeSsn");
     const startDateInput = document.getElementById("startDate");
     const endDateInput = document.getElementById("endDate");
     const loadRoomsButton = document.getElementById("loadRoomsButton");
+    const loadBookingsButton = document.getElementById("loadBookingsButton");
     const messageBox = document.getElementById("message");
     const employeeSummary = document.getElementById("employeeSummary");
     const resultsTable = document.getElementById("resultsTable");
     const resultsBody = document.getElementById("resultsBody");
+    const bookingsTable = document.getElementById("bookingsTable");
+    const bookingsBody = document.getElementById("bookingsBody");
 
     document.getElementById("openCreateCustomerModalButton").addEventListener("click", () => {
         document.getElementById("createCustomerModal").style.display = "flex";
@@ -396,14 +424,11 @@
             if (!response.ok) throw new Error(text);
 
             showMessage("Customer created!", "success");
-
-            // ⭐ AUTO-FILL INTO RENTING FORM
             document.getElementById("licenseNumber").value = drivingLicenseNumber;
-
             document.getElementById("createCustomerModal").style.display = "none";
 
         } catch (err) {
-            showMessage(err.message, "error");
+            showMessage(err.message || "Customer creation failed.", "error");
         }
     });
 
@@ -477,6 +502,29 @@
 
     function closeSuccessModal() {
         document.getElementById("successModal").style.display = "none";
+    }
+
+    function openConvertBookingModal(booking) {
+        selectedBooking = booking;
+
+        document.getElementById("convertBookingDetails").innerHTML = `
+            <p><strong>Booking ID:</strong> ${booking.bookingId}</p>
+            <p><strong>Customer:</strong> ${booking.customerNameSnapshot}</p>
+            <p><strong>Driving License:</strong> ${booking.drivingLicenseNumber ?? "N/A"}</p>
+            <p><strong>Hotel:</strong> ${booking.hotelNameSnapshot}</p>
+            <p><strong>Area:</strong> ${booking.areaSnapshot}</p>
+            <p><strong>Room Number:</strong> ${booking.roomNumber}</p>
+            <p><strong>Start Day:</strong> ${formatDatePretty(booking.startDay)}</p>
+            <p><strong>End Day:</strong> ${formatDatePretty(booking.endDay)}</p>
+            <p><strong>Price:</strong> $${booking.roomPriceSnapshot}</p>
+        `;
+
+        document.getElementById("convertBookingModal").style.display = "flex";
+    }
+
+    function closeConvertBookingModal() {
+        document.getElementById("convertBookingModal").style.display = "none";
+        selectedBooking = null;
     }
 
     async function loadAvailableRooms() {
@@ -628,11 +676,141 @@
         }
     }
 
+    async function loadBookings() {
+        hideMessage();
+        bookingsBody.innerHTML = "";
+        bookingsTable.style.display = "none";
+
+        const ssn = employeeSsnInput.value.trim();
+
+        if (!ssn) {
+            showMessage("Please enter an employee SSN first.", "error");
+            return;
+        }
+
+        loadBookingsButton.disabled = true;
+        loadBookingsButton.textContent = "Loading...";
+
+        try {
+            const infoResponse = await fetch(`/api/employee/info?ssn=${encodeURIComponent(ssn)}`);
+            if (!infoResponse.ok) {
+                const text = await infoResponse.text();
+                throw new Error(text || "Employee not found.");
+            }
+
+            loggedInEmployee = await infoResponse.json();
+            showEmployeeSummary(loggedInEmployee);
+
+            const response = await fetch(`/api/employee/bookings?ssn=${encodeURIComponent(ssn)}`);
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || "Could not load bookings.");
+            }
+
+            const bookings = await response.json();
+
+            if (bookings.length === 0) {
+                showMessage("No active bookings were found for this hotel.", "info");
+                return;
+            }
+
+            bookings.forEach(booking => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${booking.bookingId}</td>
+                    <td>${booking.customerNameSnapshot}</td>
+                    <td>${booking.drivingLicenseNumber ?? "N/A"}</td>
+                    <td>${booking.hotelNameSnapshot}</td>
+                    <td>${booking.roomNumber}</td>
+                    <td>${formatDatePretty(booking.startDay)}</td>
+                    <td>${formatDatePretty(booking.endDay)}</td>
+                    <td>$${booking.roomPriceSnapshot}</td>
+                `;
+
+                const actionCell = document.createElement("td");
+                const convertButton = document.createElement("button");
+                convertButton.type = "button";
+                convertButton.textContent = "Turn into Renting";
+                convertButton.addEventListener("click", () => openConvertBookingModal(booking));
+
+                actionCell.appendChild(convertButton);
+                row.appendChild(actionCell);
+                bookingsBody.appendChild(row);
+            });
+
+            bookingsTable.style.display = "table";
+            showMessage(`Found ${bookings.length} active booking(s).`, "success");
+
+        } catch (error) {
+            showMessage(error.message || "Failed to load bookings.", "error");
+        } finally {
+            loadBookingsButton.disabled = false;
+            loadBookingsButton.textContent = "Load active bookings";
+        }
+    }
+
+    async function confirmConvertBooking() {
+        if (!selectedBooking) {
+            showMessage("No booking selected.", "error");
+            return;
+        }
+
+        const ssn = employeeSsnInput.value.trim();
+
+        try {
+            const response = await fetch("/api/employee/convert-booking-to-renting", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ssn: ssn,
+                    bookingId: selectedBooking.bookingId
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Conversion failed.");
+            }
+
+            // build success popup content
+            document.getElementById("successMessage").innerHTML = `
+                <p><strong>Booking ID:</strong> ${selectedBooking.bookingId}</p>
+                <p><strong>Hotel:</strong> ${selectedBooking.hotelNameSnapshot}</p>
+                <p><strong>Area:</strong> ${selectedBooking.areaSnapshot}</p>
+                <p><strong>Room:</strong> ${selectedBooking.roomNumber}</p>
+                <p><strong>Customer:</strong> ${selectedBooking.customerNameSnapshot}</p>
+                <p><strong>Check-in:</strong> ${formatDatePretty(selectedBooking.startDay)} at 3:00 PM</p>
+                <p><strong>Check-out:</strong> ${formatDatePretty(selectedBooking.endDay)} at 11:00 AM</p>
+            `;
+
+            // show popup
+            closeConvertBookingModal();
+            document.getElementById("successModal").style.display = "flex";
+
+            // refresh data
+            await loadBookings();
+
+            if (startDateInput.value && endDateInput.value) {
+                await loadAvailableRooms();
+            }
+
+        } catch (error) {
+            showMessage(error.message || "Conversion failed.", "error");
+        }
+    }
+
     document.getElementById("loadRoomsButton").addEventListener("click", loadAvailableRooms);
     document.getElementById("confirmRentingButton").addEventListener("click", confirmRenting);
     document.getElementById("closeModal").addEventListener("click", closeRentingModal);
     document.getElementById("closeSuccessModal").addEventListener("click", closeSuccessModal);
     document.getElementById("closeSuccessButton").addEventListener("click", closeSuccessModal);
+    document.getElementById("loadBookingsButton").addEventListener("click", loadBookings);
+    document.getElementById("closeConvertBookingModal").addEventListener("click", closeConvertBookingModal);
+    document.getElementById("confirmConvertBookingButton").addEventListener("click", confirmConvertBooking);
 
     window.addEventListener("click", function(event) {
         if (event.target === document.getElementById("rentingModal")) {
@@ -640,6 +818,12 @@
         }
         if (event.target === document.getElementById("successModal")) {
             closeSuccessModal();
+        }
+        if (event.target === document.getElementById("createCustomerModal")) {
+            document.getElementById("createCustomerModal").style.display = "none";
+        }
+        if (event.target === document.getElementById("convertBookingModal")) {
+            closeConvertBookingModal();
         }
     });
 

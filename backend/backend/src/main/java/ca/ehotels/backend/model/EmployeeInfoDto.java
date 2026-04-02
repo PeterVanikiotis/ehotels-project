@@ -8,21 +8,51 @@ public class EmployeeInfoDto {
     private String area;
     private String chainName;
 
-    public String getSsn() { return ssn; }
-    public void setSsn(String ssn) { this.ssn = ssn; }
+    public String getSsn() {
+        return ssn;
+    }
 
-    public String getEmployeeName() { return employeeName; }
-    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
+    public void setSsn(String ssn) {
+        this.ssn = ssn;
+    }
 
-    public Integer getHotelId() { return hotelId; }
-    public void setHotelId(Integer hotelId) { this.hotelId = hotelId; }
+    public String getEmployeeName() {
+        return employeeName;
+    }
 
-    public String getHotelName() { return hotelName; }
-    public void setHotelName(String hotelName) { this.hotelName = hotelName; }
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
 
-    public String getArea() { return area; }
-    public void setArea(String area) { this.area = area; }
+    public Integer getHotelId() {
+        return hotelId;
+    }
 
-    public String getChainName() { return chainName; }
-    public void setChainName(String chainName) { this.chainName = chainName; }
+    public void setHotelId(Integer hotelId) {
+        this.hotelId = hotelId;
+    }
+
+    public String getHotelName() {
+        return hotelName;
+    }
+
+    public void setHotelName(String hotelName) {
+        this.hotelName = hotelName;
+    }
+
+    public String getArea() {
+        return area;
+    }
+
+    public void setArea(String area) {
+        this.area = area;
+    }
+
+    public String getChainName() {
+        return chainName;
+    }
+
+    public void setChainName(String chainName) {
+        this.chainName = chainName;
+    }
 }

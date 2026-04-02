@@ -1,12 +1,15 @@
 package ca.ehotels.backend.repository;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
+import ca.ehotels.backend.model.BookingDto;
+import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
 import ca.ehotels.backend.model.EmployeeInfoDto;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -175,6 +178,110 @@ public class EmployeeRepository {
                 .addValue("endDatetime", Timestamp.valueOf(endDateTime));
 
         return jdbcTemplate.update(sql, params);
+    }
+
+    public List<BookingDto> getActiveBookingsForEmployeeHotel(String ssn) {
+        String sql = """
+            SELECT
+                b.booking_id,
+                b.driving_license_number,
+                b.hotel_id,
+                b.room_number,
+                b.start_day,
+                b.end_day,
+                b.customer_name_snapshot,
+                b.hotel_name_snapshot,
+                b.area_snapshot,
+                b.room_price_snapshot
+            FROM booking b
+            JOIN works_as w
+              ON w.hotel_id = b.hotel_id
+            WHERE w.ssn = :ssn
+              AND b.archive_status = FALSE
+            ORDER BY b.start_day, b.booking_id
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                new MapSqlParameterSource("ssn", ssn),
+                (rs, rowNum) -> {
+                    BookingDto dto = new BookingDto();
+                    dto.setBookingId(rs.getInt("booking_id"));
+                    dto.setDrivingLicenseNumber(rs.getString("driving_license_number"));
+                    dto.setHotelId(rs.getInt("hotel_id"));
+                    dto.setRoomNumber(rs.getInt("room_number"));
+                    dto.setStartDay(rs.getDate("start_day").toLocalDate());
+                    dto.setEndDay(rs.getDate("end_day").toLocalDate());
+                    dto.setCustomerNameSnapshot(rs.getString("customer_name_snapshot"));
+                    dto.setHotelNameSnapshot(rs.getString("hotel_name_snapshot"));
+                    dto.setAreaSnapshot(rs.getString("area_snapshot"));
+                    dto.setRoomPriceSnapshot(rs.getBigDecimal("room_price_snapshot"));
+                    return dto;
+                }
+        );
+    }
+
+    @Transactional
+    public int convertBookingToRenting(ConvertBookingRequest request) {
+        String archiveBookingSql = """
+        UPDATE booking
+        SET archive_status = TRUE,
+            check_in_time = CURRENT_TIMESTAMP
+        WHERE booking_id = :bookingId
+          AND archive_status = FALSE
+        """;
+
+        String insertRentingSql = """
+        INSERT INTO renting (
+            ssn,
+            hotel_id,
+            room_number,
+            booking_id,
+            driving_license_number,
+            start_datetime,
+            end_datetime,
+            customer_name_snapshot,
+            hotel_name_snapshot,
+            area_snapshot,
+            room_price_snapshot
+        )
+        SELECT
+            :ssn,
+            b.hotel_id,
+            b.room_number,
+            b.booking_id,
+            b.driving_license_number,
+            b.start_day::timestamp + INTERVAL '15 hours',
+            b.end_day::timestamp + INTERVAL '11 hours',
+            b.customer_name_snapshot,
+            b.hotel_name_snapshot,
+            b.area_snapshot,
+            b.room_price_snapshot
+        FROM booking b
+        JOIN works_as w
+          ON w.hotel_id = b.hotel_id
+        WHERE b.booking_id = :bookingId
+          AND w.ssn = :ssn
+          AND b.archive_status = TRUE
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("ssn", request.getSsn())
+                .addValue("bookingId", request.getBookingId());
+
+        int archived = jdbcTemplate.update(archiveBookingSql, params);
+
+        if (archived == 0) {
+            return 0;
+        }
+
+        int inserted = jdbcTemplate.update(insertRentingSql, params);
+
+        if (inserted == 0) {
+            throw new RuntimeException("Could not create renting from booking.");
+        }
+
+        return inserted;
     }
 
     private static class AvailableRoomRowMapper implements RowMapper<AvailableRoomDto> {
