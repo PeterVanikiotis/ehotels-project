@@ -222,6 +222,8 @@ CREATE TABLE IF NOT EXISTS renting (
     driving_license_number VARCHAR(50),
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
+    actual_check_in_time TIMESTAMP,
+    actual_check_out_time TIMESTAMP,
     archive_status BOOLEAN NOT NULL DEFAULT FALSE,
     is_paid BOOLEAN NOT NULL DEFAULT FALSE,
     paid_on TIMESTAMP,

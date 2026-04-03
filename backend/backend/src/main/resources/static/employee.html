@@ -272,6 +272,32 @@
             </table>
         </div>
     </div>
+
+    <div class="section">
+        <h2>Section 3: Check out customer</h2>
+        <p>Load current active rentings for the hotel where you work, then check out a customer.</p>
+
+        <button id="loadRentingsButton" type="button">Load active rentings</button>
+
+        <div class="results-wrapper">
+            <table id="rentingsTable">
+                <thead>
+                <tr>
+                    <th>Renting ID</th>
+                    <th>Customer</th>
+                    <th>License</th>
+                    <th>Hotel</th>
+                    <th>Room #</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Paid</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody id="rentingsBody"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div id="rentingModal" class="modal">
@@ -298,7 +324,7 @@
 <div id="successModal" class="modal">
     <div class="modal-content">
         <span id="closeSuccessModal" class="close-button">&times;</span>
-        <h2>Renting created</h2>
+        <h2 id="successTitle">Success</h2>
         <div id="successMessage" class="modal-details"></div>
         <div class="modal-actions">
             <button id="closeSuccessButton" type="button">OK</button>
@@ -372,11 +398,28 @@
     </div>
 </div>
 
+<div id="checkoutRentingModal" class="modal">
+    <div class="modal-content">
+        <span id="closeCheckoutRentingModal" class="close-button">&times;</span>
+        <h2>Check Out Customer</h2>
+
+        <div id="checkoutRentingDetails" class="modal-details"></div>
+
+        <div class="modal-actions">
+            <button id="confirmCheckoutRentingButton" type="button">Confirm Check Out</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let selectedRoom = null;
     let selectedBooking = null;
     let loggedInEmployee = null;
+    let selectedRenting = null;
 
+    const loadRentingsButton = document.getElementById("loadRentingsButton");
+    const rentingsTable = document.getElementById("rentingsTable");
+    const rentingsBody = document.getElementById("rentingsBody");
     const employeeSsnInput = document.getElementById("employeeSsn");
     const startDateInput = document.getElementById("startDate");
     const endDateInput = document.getElementById("endDate");
@@ -389,13 +432,178 @@
     const bookingsTable = document.getElementById("bookingsTable");
     const bookingsBody = document.getElementById("bookingsBody");
 
-    document.getElementById("openCreateCustomerModalButton").addEventListener("click", () => {
-        document.getElementById("createCustomerModal").style.display = "flex";
-    });
+    document.getElementById("closeCheckoutRentingModal").addEventListener("click", closeCheckoutRentingModal);
+    document.getElementById("confirmCheckoutRentingButton").addEventListener("click", confirmCheckoutRenting);
+    document.getElementById("loadRentingsButton").addEventListener("click", loadRentings);
+    document.getElementById("closeCheckoutRentingModal").addEventListener("click", closeCheckoutRentingModal);
+    document.getElementById("confirmCheckoutRentingButton").addEventListener("click", confirmCheckoutRenting);
 
-    document.getElementById("closeCreateCustomerModal").addEventListener("click", () => {
-        document.getElementById("createCustomerModal").style.display = "none";
-    });
+    function formatDateTimePretty(dateValue) {
+        const d = new Date(dateValue);
+        return d.toLocaleString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit"
+        });
+    }
+
+    function openCheckoutRentingModal(renting) {
+        selectedRenting = renting;
+
+        document.getElementById("checkoutRentingDetails").innerHTML = `
+        <p><strong>Renting ID:</strong> ${renting.rentingId}</p>
+        <p><strong>Customer:</strong> ${renting.customerNameSnapshot}</p>
+        <p><strong>Driving License:</strong> ${renting.drivingLicenseNumber ?? "N/A"}</p>
+        <p><strong>Hotel:</strong> ${renting.hotelNameSnapshot}</p>
+        <p><strong>Area:</strong> ${renting.areaSnapshot}</p>
+        <p><strong>Room Number:</strong> ${renting.roomNumber}</p>
+        <p><strong>Start:</strong> ${formatDateTimePretty(renting.startDatetime)}</p>
+        <p><strong>End:</strong> ${formatDateTimePretty(renting.endDatetime)}</p>
+        <p><strong>Paid:</strong> ${renting.isPaid ? "Yes" : "No"}</p>
+    `;
+
+        document.getElementById("checkoutRentingModal").style.display = "flex";
+    }
+
+    function closeCheckoutRentingModal() {
+        document.getElementById("checkoutRentingModal").style.display = "none";
+        selectedRenting = null;
+    }
+
+    async function loadRentings() {
+        hideMessage();
+        rentingsBody.innerHTML = "";
+        rentingsTable.style.display = "none";
+
+        const ssn = employeeSsnInput.value.trim();
+
+        if (!ssn) {
+            showMessage("Please enter an employee SSN first.", "error");
+            return;
+        }
+
+        loadRentingsButton.disabled = true;
+        loadRentingsButton.textContent = "Loading...";
+
+        try {
+            const infoResponse = await fetch(`/api/employee/info?ssn=${encodeURIComponent(ssn)}`);
+            if (!infoResponse.ok) {
+                const text = await infoResponse.text();
+                throw new Error(text || "Employee not found.");
+            }
+
+            loggedInEmployee = await infoResponse.json();
+            showEmployeeSummary(loggedInEmployee);
+
+            const response = await fetch(`/api/employee/rentings?ssn=${encodeURIComponent(ssn)}`);
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || "Could not load rentings.");
+            }
+
+            const rentings = await response.json();
+
+            if (rentings.length === 0) {
+                showMessage("No active rentings were found for this hotel.", "info");
+                return;
+            }
+
+            rentings.forEach(renting => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                <td>${renting.rentingId}</td>
+                <td>${renting.customerNameSnapshot}</td>
+                <td>${renting.drivingLicenseNumber ?? "N/A"}</td>
+                <td>${renting.hotelNameSnapshot}</td>
+                <td>${renting.roomNumber}</td>
+                <td>${formatDateTimePretty(renting.startDatetime)}</td>
+                <td>${formatDateTimePretty(renting.endDatetime)}</td>
+                <td>${renting.isPaid ? "Yes" : "No"}</td>
+            `;
+
+                const actionCell = document.createElement("td");
+                const checkoutButton = document.createElement("button");
+                checkoutButton.type = "button";
+                checkoutButton.textContent = "Check Out";
+                checkoutButton.addEventListener("click", () => openCheckoutRentingModal(renting));
+
+                actionCell.appendChild(checkoutButton);
+                row.appendChild(actionCell);
+                rentingsBody.appendChild(row);
+            });
+
+            rentingsTable.style.display = "table";
+            showMessage(`Found ${rentings.length} active renting(s).`, "success");
+
+        } catch (error) {
+            showMessage(error.message || "Failed to load rentings.", "error");
+        } finally {
+            loadRentingsButton.disabled = false;
+            loadRentingsButton.textContent = "Load active rentings";
+        }
+    }
+
+    async function confirmCheckoutRenting() {
+        if (!selectedRenting) {
+            showMessage("No renting selected.", "error");
+            return;
+        }
+
+        const ssn = employeeSsnInput.value.trim();
+
+        try {
+            const response = await fetch("/api/employee/checkout-renting", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    ssn: ssn,
+                    rentingId: selectedRenting.rentingId
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Checkout failed.");
+            }
+
+            // set title
+            document.getElementById("successTitle").textContent = "Customer Checked Out";
+
+            // build success content
+            document.getElementById("successMessage").innerHTML = `
+                <p><strong>Renting ID:</strong> ${selectedRenting.rentingId}</p>
+                <p><strong>Hotel:</strong> ${selectedRenting.hotelNameSnapshot}</p>
+                <p><strong>Area:</strong> ${selectedRenting.areaSnapshot}</p>
+                <p><strong>Room:</strong> ${selectedRenting.roomNumber}</p>
+                <p><strong>Customer:</strong> ${selectedRenting.customerNameSnapshot}</p>
+                <p><strong>Checked out at:</strong> ${new Date().toLocaleString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit"
+                })}</p>
+            `;
+
+            closeCheckoutRentingModal();
+            document.getElementById("successModal").style.display = "flex";
+
+            await loadRentings();
+
+            if (startDateInput.value && endDateInput.value) {
+                await loadAvailableRooms();
+            }
+
+        } catch (error) {
+            showMessage(error.message || "Checkout failed.", "error");
+        }
+    }
 
     document.getElementById("confirmCreateCustomerButton").addEventListener("click", async () => {
         const drivingLicenseNumber = document.getElementById("newCustomerLicense").value.trim();
@@ -667,7 +875,7 @@
             if (!response.ok) {
                 throw new Error(text || "Renting failed.");
             }
-
+            document.getElementById("successTitle").textContent = "Renting Created";
             document.getElementById("successMessage").innerHTML = `
                 <p><strong>Hotel:</strong> ${selectedRoom.hotelName}</p>
                 <p><strong>Room:</strong> ${selectedRoom.roomNumber}</p>
@@ -826,6 +1034,9 @@
     document.getElementById("confirmConvertBookingButton").addEventListener("click", confirmConvertBooking);
 
     window.addEventListener("click", function(event) {
+        if (event.target === document.getElementById("checkoutRentingModal")) {
+            closeCheckoutRentingModal();
+        }
         if (event.target === document.getElementById("rentingModal")) {
             closeRentingModal();
         }
