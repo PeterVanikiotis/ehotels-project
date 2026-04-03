@@ -104,6 +104,10 @@ public class EmployeeController {
             return ResponseEntity.badRequest().body("Employee SSN and booking ID are required.");
         }
 
+        if (request.getPaymentConfirmed() == null || !request.getPaymentConfirmed()) {
+            return ResponseEntity.badRequest().body("Payment must be confirmed before conversion.");
+        }
+
         try {
             int rows = employeeRepository.convertBookingToRenting(request);
 
@@ -113,7 +117,8 @@ public class EmployeeController {
 
             return ResponseEntity.ok("Booking converted to renting successfully.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Conversion failed.");
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Conversion failed: " + e.getMessage());
         }
     }
 }

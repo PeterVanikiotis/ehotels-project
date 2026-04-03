@@ -359,6 +359,13 @@
 
         <div id="convertBookingDetails" class="modal-details"></div>
 
+        <div class="field" style="margin-top: 16px;">
+            <label style="font-weight: normal;">
+                <input type="checkbox" id="paymentConfirmedCheckbox" style="margin-right: 8px;">
+                Confirm that payment has been made
+            </label>
+        </div>
+
         <div class="modal-actions">
             <button id="confirmConvertBookingButton" type="button">Confirm Conversion</button>
         </div>
@@ -519,11 +526,13 @@
             <p><strong>Price:</strong> $${booking.roomPriceSnapshot}</p>
         `;
 
+        document.getElementById("paymentConfirmedCheckbox").checked = false;
         document.getElementById("convertBookingModal").style.display = "flex";
     }
 
     function closeConvertBookingModal() {
         document.getElementById("convertBookingModal").style.display = "none";
+        document.getElementById("paymentConfirmedCheckbox").checked = false;
         selectedBooking = null;
     }
 
@@ -757,6 +766,12 @@
         }
 
         const ssn = employeeSsnInput.value.trim();
+        const paymentConfirmed = document.getElementById("paymentConfirmedCheckbox").checked;
+
+        if (!paymentConfirmed) {
+            showMessage("Please confirm that payment has been made.", "error");
+            return;
+        }
 
         try {
             const response = await fetch("/api/employee/convert-booking-to-renting", {
@@ -766,7 +781,8 @@
                 },
                 body: JSON.stringify({
                     ssn: ssn,
-                    bookingId: selectedBooking.bookingId
+                    bookingId: selectedBooking.bookingId,
+                    paymentConfirmed: paymentConfirmed
                 })
             });
 
@@ -776,22 +792,19 @@
                 throw new Error(text || "Conversion failed.");
             }
 
-            // build success popup content
             document.getElementById("successMessage").innerHTML = `
-                <p><strong>Booking ID:</strong> ${selectedBooking.bookingId}</p>
-                <p><strong>Hotel:</strong> ${selectedBooking.hotelNameSnapshot}</p>
-                <p><strong>Area:</strong> ${selectedBooking.areaSnapshot}</p>
-                <p><strong>Room:</strong> ${selectedBooking.roomNumber}</p>
-                <p><strong>Customer:</strong> ${selectedBooking.customerNameSnapshot}</p>
-                <p><strong>Check-in:</strong> ${formatDatePretty(selectedBooking.startDay)} at 3:00 PM</p>
-                <p><strong>Check-out:</strong> ${formatDatePretty(selectedBooking.endDay)} at 11:00 AM</p>
-            `;
+            <p><strong>Booking ID:</strong> ${selectedBooking.bookingId}</p>
+            <p><strong>Hotel:</strong> ${selectedBooking.hotelNameSnapshot}</p>
+            <p><strong>Area:</strong> ${selectedBooking.areaSnapshot}</p>
+            <p><strong>Room:</strong> ${selectedBooking.roomNumber}</p>
+            <p><strong>Customer:</strong> ${selectedBooking.customerNameSnapshot}</p>
+            <p><strong>Check-in:</strong> ${formatDatePretty(selectedBooking.startDay)} at 3:00 PM</p>
+            <p><strong>Check-out:</strong> ${formatDatePretty(selectedBooking.endDay)} at 11:00 AM</p>
+        `;
 
-            // show popup
             closeConvertBookingModal();
             document.getElementById("successModal").style.display = "flex";
 
-            // refresh data
             await loadBookings();
 
             if (startDateInput.value && endDateInput.value) {
