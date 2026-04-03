@@ -922,20 +922,20 @@ VALUES
     ('DL00011ON', 11, 101, '2026-04-20', '2026-04-22', TRUE, '2026-04-20 15:00:00', '2026-04-22 11:00:00', 'Charlotte Scott', 'Aurora Kanata Hotel', 'Kanata', 210),
     ('DL00012ON', 12, 102, '2026-04-21', '2026-04-23', TRUE, '2026-04-21 15:00:00', '2026-04-23 11:00:00', 'Benjamin Hill', 'Aurora Gatineau Hotel', 'Gatineau Core', 215);
 
-INSERT INTO renting (ssn, hotel_id, room_number, booking_id, driving_license_number, start_datetime, end_datetime, archive_status, is_paid, paid_on, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
+INSERT INTO renting (ssn, hotel_id, room_number, booking_id, driving_license_number, start_datetime, end_datetime, actual_check_in_time, actual_check_out_time, archive_status, is_paid, paid_on, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
 VALUES
-    ('900000002', 1, 101, 1, 'DL00001ON', '2026-04-10 15:00:00', '2026-04-12 11:00:00', TRUE, TRUE, '2026-04-10 15:10:00', 'Emma Taylor', 'Maple Downtown Hotel', 'Downtown Ottawa', 170),
-    ('900000006', 2, 102, 2, 'DL00002ON', '2026-04-11 15:00:00', '2026-04-13 11:00:00', TRUE, TRUE, '2026-04-11 15:10:00', 'Noah Anderson', 'Maple ByWard Hotel', 'ByWard Market', 215),
-    ('900000010', 3, 103, 3, 'DL00003ON', '2026-04-12 15:00:00', '2026-04-14 11:00:00', TRUE, TRUE, '2026-04-12 15:10:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260),
-    ('900000014', 4, 104, 4, 'DL00004ON', '2026-04-13 15:00:00', '2026-04-15 11:00:00', FALSE, TRUE, '2026-04-13 15:10:00', 'Liam Jackson', 'Maple Gatineau Hotel', 'Gatineau Core', 275),
-    ('900000018', 5, 105, 5, 'DL00005ON', '2026-04-14 15:00:00', '2026-04-16 11:00:00', FALSE, TRUE, '2026-04-14 15:10:00', 'Sophia White', 'Maple Old Hotel', 'Old Montreal', 320),
-    ('900000022', 6, 101, 6, 'DL00006ON', '2026-04-15 15:00:00', '2026-04-17 11:00:00', FALSE, TRUE, '2026-04-15 15:10:00', 'Mason Harris', 'Maple North Hotel', 'North York', 170),
-    ('900000078', 20, 105, NULL, 'DL00013ON', '2026-05-01 16:00:00', '2026-05-03 11:00:00', FALSE, TRUE, '2026-05-01 16:20:00', 'Amelia Adams', 'Holiday Gatineau Hotel', 'Gatineau Core', 300),
-    ('900000082', 21, 104, NULL, 'DL00014ON', '2026-05-02 16:00:00', '2026-05-04 11:00:00', FALSE, FALSE, NULL, 'Jacob Baker', 'Holiday Old Hotel', 'Old Montreal', 295),
-    ('900000086', 22, 103, NULL, 'DL00015ON', '2026-05-03 16:00:00', '2026-05-05 11:00:00', FALSE, TRUE, '2026-05-03 16:20:00', 'Ella Nelson', 'Holiday North Hotel', 'North York', 220),
-    ('900000090', 23, 102, NULL, 'DL00016ON', '2026-05-04 16:00:00', '2026-05-06 11:00:00', FALSE, FALSE, NULL, 'Daniel Carter', 'Holiday Burnaby Hotel', 'Burnaby', 215),
-    ('900000094', 24, 101, NULL, 'DL00017ON', '2026-05-05 16:00:00', '2026-05-07 11:00:00', TRUE, TRUE, '2026-05-05 16:20:00', 'Ava Mitchell', 'Holiday Midtown Hotel', 'Midtown Manhattan', 210),
-    ('900000098', 25, 105, NULL, 'DL00018ON', '2026-05-06 16:00:00', '2026-05-08 11:00:00', TRUE, FALSE, NULL, 'Jack Perez', 'Hilton Downtown Hotel', 'Downtown Ottawa', 280);
+    ('900000002',1,101,1,'DL00001ON','2026-04-10 15:00:00','2026-04-12 11:00:00','2026-04-10 15:12:00','2026-04-12 10:48:00',TRUE,TRUE,'2026-04-10 15:10:00','Emma Taylor','Maple Downtown Hotel','Downtown Ottawa',170),
+    ('900000006',2,102,2,'DL00002ON','2026-04-11 15:00:00','2026-04-13 11:00:00','2026-04-11 15:25:00','2026-04-13 10:55:00',TRUE,TRUE,'2026-04-11 15:10:00','Noah Anderson','Maple ByWard Hotel','ByWard Market',215),
+    ('900000010',3,103,3,'DL00003ON','2026-04-12 15:00:00','2026-04-14 11:00:00','2026-04-12 15:08:00','2026-04-14 10:50:00',TRUE,TRUE,'2026-04-12 15:10:00','Olivia Thomas','Maple Kanata Hotel','Kanata',260),
+    ('900000014',4,104,4,'DL00004ON','2026-04-13 15:00:00','2026-04-15 11:00:00','2026-04-13 15:18:00',NULL,FALSE,TRUE,'2026-04-13 15:10:00','Liam Jackson','Maple Gatineau Hotel','Gatineau Core',275),
+    ('900000018',5,105,5,'DL00005ON','2026-04-14 15:00:00','2026-04-16 11:00:00','2026-04-14 15:05:00',NULL,FALSE,TRUE,'2026-04-14 15:10:00','Sophia White','Maple Old Hotel','Old Montreal',320),
+    ('900000022',6,101,6,'DL00006ON','2026-04-15 15:00:00','2026-04-17 11:00:00','2026-04-15 15:22:00',NULL,FALSE,TRUE,'2026-04-15 15:10:00','Mason Harris','Maple North Hotel','North York',170),
+    ('900000078',20,105,7,'DL00013ON','2026-05-01 16:00:00','2026-05-03 11:00:00','2026-05-01 16:14:00',NULL,FALSE,TRUE,'2026-05-01 16:20:00','Amelia Adams','Holiday Gatineau Hotel','Gatineau Core',300),
+    ('900000082',21,104,8,'DL00014ON','2026-05-02 16:00:00','2026-05-04 11:00:00','2026-05-02 16:30:00',NULL,FALSE,FALSE,NULL,'Jacob Baker','Holiday Old Hotel','Old Montreal',295),
+    ('900000086',22,103,9,'DL00015ON','2026-05-03 16:00:00','2026-05-05 11:00:00','2026-05-03 16:11:00',NULL,FALSE,TRUE,'2026-05-03 16:20:00','Ella Nelson','Holiday North Hotel','North York',220),
+    ('900000090',23,102,10,'DL00016ON','2026-05-04 16:00:00','2026-05-06 11:00:00','2026-05-04 16:19:00',NULL,FALSE,FALSE,NULL,'Daniel Carter','Holiday Burnaby Hotel','Burnaby',215),
+    ('900000094',24,101,11,'DL00017ON','2026-05-05 16:00:00','2026-05-07 11:00:00','2026-05-05 16:07:00','2026-05-07 10:42:00',TRUE,TRUE,'2026-05-05 16:20:00','Ava Mitchell','Holiday Midtown Hotel','Midtown Manhattan',210),
+    ('900000098',25,105,12,'DL00018ON','2026-05-06 16:00:00','2026-05-08 11:00:00','2026-05-06 16:28:00','2026-05-08 10:58:00',TRUE,FALSE,NULL,'Jack Perez','Hilton Downtown Hotel','Downtown Ottawa',280);
 
 -- Keep serial sequences aligned after explicit population.
 SELECT setval(pg_get_serial_sequence('hotel_chain', 'central_office_id'), COALESCE((SELECT MAX(central_office_id) FROM hotel_chain), 1), TRUE);

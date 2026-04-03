@@ -2,9 +2,11 @@ package ca.ehotels.backend.controller;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.BookingDto;
+import ca.ehotels.backend.model.CheckoutRentingRequest;
 import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
 import ca.ehotels.backend.model.EmployeeInfoDto;
+import ca.ehotels.backend.model.RentingDto;
 import ca.ehotels.backend.repository.EmployeeRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -119,6 +121,38 @@ public class EmployeeController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Conversion failed: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/rentings")
+    public ResponseEntity<?> getRentings(@RequestParam String ssn) {
+        EmployeeInfoDto employee = employeeRepository.getEmployeeInfo(ssn);
+
+        if (employee == null) {
+            return ResponseEntity.badRequest().body("Employee was not found.");
+        }
+
+        List<RentingDto> rentings = employeeRepository.getActiveRentingsForEmployeeHotel(ssn);
+        return ResponseEntity.ok(rentings);
+    }
+
+    @PostMapping("/checkout-renting")
+    public ResponseEntity<String> checkoutRenting(@RequestBody CheckoutRentingRequest request) {
+        if (request.getSsn() == null || request.getSsn().trim().isEmpty() || request.getRentingId() == null) {
+            return ResponseEntity.badRequest().body("Employee SSN and renting ID are required.");
+        }
+
+        try {
+            int rows = employeeRepository.checkoutRenting(request);
+
+            if (rows == 0) {
+                return ResponseEntity.badRequest().body("Checkout failed. Renting was not found or is already archived.");
+            }
+
+            return ResponseEntity.ok("Customer checked out successfully.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Checkout failed: " + e.getMessage());
         }
     }
 }

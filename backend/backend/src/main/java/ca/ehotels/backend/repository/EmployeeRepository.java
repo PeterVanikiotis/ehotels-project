@@ -2,9 +2,11 @@ package ca.ehotels.backend.repository;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.BookingDto;
+import ca.ehotels.backend.model.CheckoutRentingRequest;
 import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
 import ca.ehotels.backend.model.EmployeeInfoDto;
+import ca.ehotels.backend.model.RentingDto;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -240,6 +242,7 @@ public class EmployeeRepository {
             driving_license_number,
             start_datetime,
             end_datetime,
+            actual_check_in_time,
             archive_status,
             is_paid,
             paid_on,
@@ -254,11 +257,18 @@ public class EmployeeRepository {
             b.room_number,
             b.booking_id,
             b.driving_license_number,
+
+            -- planned times (from booking)
             b.start_day::timestamp + INTERVAL '15 hours',
             b.end_day::timestamp + INTERVAL '11 hours',
+
+            -- actual check-in
+            CURRENT_TIMESTAMP,
+
             FALSE,
             TRUE,
             CURRENT_TIMESTAMP,
+
             b.customer_name_snapshot,
             b.hotel_name_snapshot,
             b.area_snapshot,
@@ -288,6 +298,74 @@ public class EmployeeRepository {
         }
 
         return inserted;
+    }
+
+    public List<RentingDto> getActiveRentingsForEmployeeHotel(String ssn) {
+        String sql = """
+            SELECT
+                r.renting_id,
+                r.ssn,
+                r.hotel_id,
+                r.room_number,
+                r.booking_id,
+                r.driving_license_number,
+                r.start_datetime,
+                r.end_datetime,
+                r.is_paid,
+                r.customer_name_snapshot,
+                r.hotel_name_snapshot,
+                r.area_snapshot,
+                r.room_price_snapshot
+            FROM renting r
+            JOIN works_as w
+              ON w.hotel_id = r.hotel_id
+            WHERE w.ssn = :ssn
+              AND r.archive_status = FALSE
+            ORDER BY r.start_datetime, r.renting_id
+            """;
+
+        return jdbcTemplate.query(
+                sql,
+                new MapSqlParameterSource("ssn", ssn),
+                (rs, rowNum) -> {
+                    RentingDto dto = new RentingDto();
+                    dto.setRentingId(rs.getInt("renting_id"));
+                    dto.setSsn(rs.getString("ssn"));
+                    dto.setHotelId(rs.getInt("hotel_id"));
+                    dto.setRoomNumber(rs.getInt("room_number"));
+                    dto.setBookingId((Integer) rs.getObject("booking_id"));
+                    dto.setDrivingLicenseNumber(rs.getString("driving_license_number"));
+                    dto.setStartDatetime(rs.getTimestamp("start_datetime").toLocalDateTime());
+                    dto.setEndDatetime(rs.getTimestamp("end_datetime").toLocalDateTime());
+                    dto.setIsPaid(rs.getBoolean("is_paid"));
+                    dto.setCustomerNameSnapshot(rs.getString("customer_name_snapshot"));
+                    dto.setHotelNameSnapshot(rs.getString("hotel_name_snapshot"));
+                    dto.setAreaSnapshot(rs.getString("area_snapshot"));
+                    dto.setRoomPriceSnapshot(rs.getBigDecimal("room_price_snapshot"));
+                    return dto;
+                }
+        );
+    }
+
+    public int checkoutRenting(CheckoutRentingRequest request) {
+        String sql = """
+        UPDATE renting
+        SET archive_status = TRUE,
+            actual_check_out_time = CURRENT_TIMESTAMP
+        WHERE renting_id = :rentingId
+          AND archive_status = FALSE
+          AND hotel_id IN (
+              SELECT hotel_id
+              FROM works_as
+              WHERE ssn = :ssn
+          )
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("ssn", request.getSsn())
+                .addValue("rentingId", request.getRentingId());
+
+        return jdbcTemplate.update(sql, params);
     }
 
     private static class AvailableRoomRowMapper implements RowMapper<AvailableRoomDto> {
