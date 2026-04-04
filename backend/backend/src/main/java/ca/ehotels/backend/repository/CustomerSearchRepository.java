@@ -1,6 +1,7 @@
 package ca.ehotels.backend.repository;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
+import ca.ehotels.backend.model.HotelCapacityDto;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -27,7 +28,7 @@ public class CustomerSearchRepository {
             LocalDate endDate,
             Integer capacity,
             String area,
-            List<Integer> chainIds,
+            Integer hotelId,
             Integer rating,
             Integer minTotalRooms,
             Double maxPrice
@@ -110,9 +111,9 @@ public class CustomerSearchRepository {
             params.addValue("maxPrice", maxPrice);
         }
 
-        if (chainIds != null && !chainIds.isEmpty()) {
-            sql.append(" AND h.central_office_id IN (:chainIds)");
-            params.addValue("chainIds", chainIds);
+        if (hotelId != null) {
+            sql.append(" AND h.hotel_id = :hotelId ");
+            params.addValue("hotelId", hotelId);
         }
 
         sql.append("""
@@ -122,14 +123,31 @@ public class CustomerSearchRepository {
         return jdbcTemplate.query(sql.toString(), params, new AvailableRoomRowMapper());
     }
 
-    public List<Map<String, Object>> getHotelChains() {
-        String sql = """
-            SELECT central_office_id, chain_name
-            FROM hotel_chain
-            ORDER BY chain_name
-            """;
+    public List<HotelCapacityDto> getHotelsWithCapacity(String area) {
+        StringBuilder sql = new StringBuilder("""
+        SELECT
+            tcp.hotel_id,
+            tcp.hotel_name,
+            hc.chain_name,
+            tcp.total_capacity
+        FROM total_capacity_per_hotel tcp
+        JOIN hotel h
+          ON tcp.hotel_id = h.hotel_id
+        JOIN hotel_chain hc
+          ON h.central_office_id = hc.central_office_id
+        WHERE 1=1
+        """);
 
-        return jdbcTemplate.queryForList(sql, Collections.emptyMap());
+        MapSqlParameterSource params = new MapSqlParameterSource();
+
+        if (area != null && !area.isBlank()) {
+            sql.append(" AND LOWER(TRIM(h.area)) = LOWER(TRIM(:area))");
+            params.addValue("area", area.trim());
+        }
+
+        sql.append(" ORDER BY hc.chain_name, tcp.hotel_name");
+
+        return jdbcTemplate.query(sql.toString(), params, new HotelCapacityRowMapper());
     }
 
     public List<String> getAreas() {
@@ -177,6 +195,17 @@ public class CustomerSearchRepository {
             dto.setHasFridge(rs.getBoolean("has_fridge"));
             dto.setRoomExtendedStatus(rs.getBoolean("room_extended_status"));
 
+            return dto;
+        }
+    }
+    private static class HotelCapacityRowMapper implements RowMapper<HotelCapacityDto> {
+        @Override
+        public HotelCapacityDto mapRow(ResultSet rs, int rowNum) throws SQLException {
+            HotelCapacityDto dto = new HotelCapacityDto();
+            dto.setHotelId(rs.getInt("hotel_id"));
+            dto.setHotelName(rs.getString("hotel_name"));
+            dto.setChainName(rs.getString("chain_name"));
+            dto.setTotalCapacity(rs.getInt("total_capacity"));
             return dto;
         }
     }

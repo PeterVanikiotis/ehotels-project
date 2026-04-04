@@ -214,9 +214,11 @@
             <input type="number" id="maxPrice" min="1" step="0.01">
         </div>
 
-        <div class="chain-box">
-            <label>Hotel chains</label>
-            <div id="hotelChainList" class="chain-list"></div>
+        <div class="field">
+            <label for="hotel">Hotel</label>
+            <select id="hotel">
+                <option value="">Any hotel</option>
+            </select>
         </div>
     </div>
 
@@ -226,6 +228,7 @@
     </div>
 
     <div id="message" class="message"></div>
+    <div id="capacitySummary" class="message info" style="display:none;"></div>
 
     <table id="resultsTable" style="display:none;">
         <thead>
@@ -375,7 +378,8 @@
     const rating = document.getElementById("rating");
     const minTotalRooms = document.getElementById("minTotalRooms");
     const maxPrice = document.getElementById("maxPrice");
-    const hotelChainList = document.getElementById("hotelChainList");
+    const hotel = document.getElementById("hotel");
+    const capacitySummary = document.getElementById("capacitySummary");
     const searchButton = document.getElementById("searchButton");
     const message = document.getElementById("message");
     const resultsTable = document.getElementById("resultsTable");
@@ -533,21 +537,16 @@
         }
     }
 
-    function getSelectedChains() {
-        return Array.from(document.querySelectorAll('input[name="chain"]:checked'))
-            .map(cb => cb.value);
-    }
-
     function saveForm() {
         const data = {
             startDate: startDate.value,
             endDate: endDate.value,
             capacity: capacity.value,
             area: area.value,
+            hotelId: hotel.value,
             rating: rating.value,
             minTotalRooms: minTotalRooms.value,
-            maxPrice: maxPrice.value,
-            chainIds: getSelectedChains()
+            maxPrice: maxPrice.value
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
@@ -563,35 +562,31 @@
         return data;
     }
 
-    async function loadChains() {
-        const saved = loadForm();
-        const response = await fetch("/api/customer/hotel-chains");
-        const chains = await response.json();
+    async function loadHotels() {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 
-        hotelChainList.innerHTML = "";
+        let url = "/api/customer/hotels-with-capacity";
+        if (area.value) {
+            url += `?area=${encodeURIComponent(area.value)}`;
+        }
 
-        chains.forEach(chain => {
-            const div = document.createElement("div");
-            div.className = "chain-item";
+        const response = await fetch(url);
+        const hotels = await response.json();
 
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.name = "chain";
-            checkbox.value = chain.central_office_id;
+        hotel.innerHTML = '<option value="">Any hotel</option>';
 
-            if (saved.chainIds && saved.chainIds.includes(String(chain.central_office_id))) {
-                checkbox.checked = true;
-            }
-
-            checkbox.addEventListener("change", saveForm);
-
-            const label = document.createElement("label");
-            label.textContent = chain.chain_name;
-
-            div.appendChild(checkbox);
-            div.appendChild(label);
-            hotelChainList.appendChild(div);
+        hotels.forEach(h => {
+            const option = document.createElement("option");
+            option.value = h.hotelId;
+            option.textContent = `${h.hotelName} (${h.chainName}) - Capacity: ${h.totalCapacity}`;
+            option.dataset.capacity = h.totalCapacity;
+            option.dataset.hotelName = h.hotelName;
+            hotel.appendChild(option);
         });
+
+        if (saved.hotelId) {
+            hotel.value = saved.hotelId;
+        }
     }
 
     async function loadAreas() {
@@ -664,7 +659,7 @@
         if (minTotalRooms.value) params.append("minTotalRooms", minTotalRooms.value);
         if (maxPrice.value) params.append("maxPrice", maxPrice.value);
 
-        getSelectedChains().forEach(id => params.append("chainIds", id));
+        if (hotel.value) params.append("hotelId", hotel.value);
 
         searchButton.disabled = true;
         searchButton.innerText = "Searching...";
@@ -674,7 +669,8 @@
             const response = await fetch(`/api/customer/search-rooms?${params.toString()}`);
 
             if (!response.ok) {
-                throw new Error("Search request failed.");
+                const errorText = await response.text();
+                throw new Error(errorText || "Search request failed.");
             }
 
             const rooms = await response.json();
@@ -683,11 +679,25 @@
             if (rooms.length === 0) {
                 showMessage("No available rooms matched your criteria.", "info");
                 resultsTable.style.display = "none";
+                capacitySummary.style.display = "none";
+                capacitySummary.innerText = "";
                 return;
             }
 
             showMessage(`${rooms.length} available room(s) found.`, "success");
             resultsTable.style.display = "table";
+
+            if (hotel.value && hotel.selectedIndex >= 0) {
+                const selectedOption = hotel.options[hotel.selectedIndex];
+                const selectedHotelName = selectedOption?.dataset?.hotelName || selectedOption?.textContent || "Selected hotel";
+                const selectedCapacity = selectedOption?.dataset?.capacity || "N/A";
+
+                capacitySummary.innerText = `Total capacity for ${selectedHotelName}: ${selectedCapacity}`;
+                capacitySummary.style.display = "block";
+            } else {
+                capacitySummary.style.display = "none";
+                capacitySummary.innerText = "";
+            }
 
             rooms.forEach(room => {
                 const row = document.createElement("tr");
@@ -717,8 +727,10 @@
 
         } catch (error) {
             console.error(error);
-            showMessage("Failed to search rooms.", "error", true);
+            showMessage(error.message || "Failed to search rooms.", "error", true);
             resultsTable.style.display = "none";
+            capacitySummary.style.display = "none";
+            capacitySummary.innerText = "";
         } finally {
             searchButton.disabled = false;
             searchButton.innerText = "Search rooms";
@@ -786,10 +798,16 @@
     });
 
     [
-        startDate, endDate, capacity, area, rating, minTotalRooms, maxPrice
+        startDate, endDate, capacity, area, hotel, rating, minTotalRooms, maxPrice
     ].forEach(el => {
         el.addEventListener("input", saveForm);
         el.addEventListener("change", saveForm);
+    });
+
+    area.addEventListener("change", async () => {
+        await loadHotels();
+        hotel.value = "";
+        saveForm();
     });
 
     startDate.addEventListener("change", () => {
@@ -806,7 +824,7 @@
 
         loadForm();
         await loadAreas();
-        await loadChains();
+        await loadHotels();
     };
     function closeSuccessModal() {
         document.getElementById("successModal").style.display = "none";
