@@ -2,6 +2,7 @@ package ca.ehotels.backend.repository;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.HotelCapacityDto;
+import ca.ehotels.backend.model.AvailableRoomsPerAreaDto;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -150,6 +151,41 @@ public class CustomerSearchRepository {
         return jdbcTemplate.query(sql.toString(), params, new HotelCapacityRowMapper());
     }
 
+    public List<AvailableRoomsPerAreaDto> getAvailableRoomsPerArea(LocalDate startDate, LocalDate endDate) {
+        String sql = """
+        SELECT
+            v.area,
+            COUNT(*) AS available_rooms
+        FROM available_rooms_per_area_base v
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM booking b
+            WHERE b.hotel_id = v.hotel_id
+              AND b.room_number = v.room_number
+              AND b.archive_status = FALSE
+              AND b.start_day < :endDate
+              AND b.end_day > :startDate
+        )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM renting rt
+            WHERE rt.hotel_id = v.hotel_id
+              AND rt.room_number = v.room_number
+              AND rt.archive_status = FALSE
+              AND rt.start_datetime::date < :endDate
+              AND rt.end_datetime::date > :startDate
+        )
+        GROUP BY v.area
+        ORDER BY v.area
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("startDate", startDate)
+                .addValue("endDate", endDate);
+
+        return jdbcTemplate.query(sql, params, new AvailableRoomsPerAreaRowMapper());
+    }
+
     public List<String> getAreas() {
         String sql = """
             SELECT DISTINCT TRIM(area) AS area
@@ -206,6 +242,15 @@ public class CustomerSearchRepository {
             dto.setHotelName(rs.getString("hotel_name"));
             dto.setChainName(rs.getString("chain_name"));
             dto.setTotalCapacity(rs.getInt("total_capacity"));
+            return dto;
+        }
+    }
+    private static class AvailableRoomsPerAreaRowMapper implements RowMapper<AvailableRoomsPerAreaDto> {
+        @Override
+        public AvailableRoomsPerAreaDto mapRow(ResultSet rs, int rowNum) throws SQLException {
+            AvailableRoomsPerAreaDto dto = new AvailableRoomsPerAreaDto();
+            dto.setArea(rs.getString("area"));
+            dto.setAvailableRooms(rs.getInt("available_rooms"));
             return dto;
         }
     }

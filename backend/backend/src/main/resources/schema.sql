@@ -265,26 +265,15 @@ CREATE TABLE IF NOT EXISTS renting (
 -- Description:
 -- Shows the number of available (on the day that you search) rooms grouped by hotel area.
 -- =========================================
-CREATE OR REPLACE VIEW available_rooms_per_area AS
-SELECT h.area,
-       COUNT(*) AS available_rooms
+CREATE OR REPLACE VIEW available_rooms_per_area_base AS
+SELECT
+    r.hotel_id,
+    r.room_number,
+    h.area
 FROM room r
-         JOIN hotel h ON r.hotel_id = h.hotel_id
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM renting rt
-    WHERE rt.hotel_id = r.hotel_id
-      AND rt.room_number = r.room_number
-      AND CURRENT_DATE BETWEEN rt.start_datetime AND rt.end_datetime
-)
-  AND NOT EXISTS (
-    SELECT 1
-    FROM booking b
-    WHERE b.hotel_id = r.hotel_id
-      AND b.room_number = r.room_number
-      AND CURRENT_DATE BETWEEN b.start_day AND b.end_day
-)
-GROUP BY h.area;
+         JOIN hotel h
+              ON r.hotel_id = h.hotel_id
+WHERE r.damage_status = 'none';
 
 -- =========================================
 -- VIEW 2: Total Capacity per Hotel

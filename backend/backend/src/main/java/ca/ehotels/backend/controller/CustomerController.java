@@ -1,6 +1,7 @@
 package ca.ehotels.backend.controller;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
+import ca.ehotels.backend.model.AvailableRoomsPerAreaDto;
 import ca.ehotels.backend.model.CreateBookingRequest;
 import ca.ehotels.backend.model.CustomerDto;
 import ca.ehotels.backend.model.HotelCapacityDto;
@@ -67,6 +68,18 @@ public class CustomerController {
             @RequestParam(required = false) String area
     ) {
         return customerSearchRepository.getHotelsWithCapacity(area);
+    }
+
+    @GetMapping("/available-rooms-per-area")
+    public List<AvailableRoomsPerAreaDto> getAvailableRoomsPerArea(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        if (!endDate.isAfter(startDate)) {
+            throw new IllegalArgumentException("End date must be after start date.");
+        }
+
+        return customerSearchRepository.getAvailableRoomsPerArea(startDate, endDate);
     }
 
     @GetMapping("/areas")
