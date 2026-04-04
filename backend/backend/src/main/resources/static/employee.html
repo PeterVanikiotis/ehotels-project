@@ -67,7 +67,7 @@
             font-size: 14px;
         }
 
-        input {
+        input, select {
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -86,6 +86,29 @@
 
         button:hover {
             background: #163a59;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         button:disabled {
@@ -301,6 +324,26 @@
             </table>
         </div>
     </div>
+
+    <div class="section">
+        <h2>Section 4: Manage Rooms</h2>
+
+        <button id="loadRoomsManageButton">Load Rooms</button>
+
+        <table id="manageRoomsTable">
+            <thead>
+            <tr>
+                <th>Room #</th>
+                <th>Price</th>
+                <th>Capacity</th>
+                <th>View</th>
+                <th>Damage</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="manageRoomsBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="rentingModal" class="modal">
@@ -465,11 +508,66 @@
     </div>
 </div>
 
+<div id="editRoomModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEditRoomModal" class="close-button">&times;</span>
+        <h2>Edit Room</h2>
+
+        <div class="form-group">
+            <label>Price</label>
+            <input id="editPrice">
+        </div>
+
+        <div class="form-group">
+            <label>Capacity</label>
+            <input id="editCapacity">
+        </div>
+
+        <div class="form-group">
+            <label>View type</label>
+            <select id="editView">
+                <option value="sea">sea</option>
+                <option value="mountain">mountain</option>
+                <option value="city">city</option>
+                <option value="garden">garden</option>
+                <option value="pool">pool</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Damage status</label>
+            <select id="editDamage">
+                <option value="none">none</option>
+                <option value="minor">minor</option>
+                <option value="major">major</option>
+                <option value="out_of_service">out_of_service</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Specific problem or damage</label>
+            <input id="editProblemDescription">
+        </div>
+
+        <div class="form-group">
+            <label>Features</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="editTv"> TV</label>
+                <label><input type="checkbox" id="editAc"> AC</label>
+                <label><input type="checkbox" id="editFridge"> Fridge</label>
+                <label><input type="checkbox" id="editExtended"> Extendable</label>
+            </div>
+        </div>
+
+        <button id="saveRoomButton">Update Room</button>
+    </div>
+</div>
 <script>
     let selectedRoom = null;
     let selectedBooking = null;
     let loggedInEmployee = null;
     let selectedRenting = null;
+    let selectedRoomEdit = null;
 
     const loadRentingsButton = document.getElementById("loadRentingsButton");
     const rentingsTable = document.getElementById("rentingsTable");
@@ -503,6 +601,24 @@
         });
     }
 
+    function openEditRoom(room) {
+        selectedRoomEdit = room;
+
+        document.getElementById("editPrice").value = room.price;
+        document.getElementById("editCapacity").value = room.roomCapacity;
+        document.getElementById("editView").value = room.roomViewType;
+        document.getElementById("editDamage").value = room.damageStatus || "none";
+
+        document.getElementById("editProblemDescription").value = "";
+
+        document.getElementById("editTv").checked = room.hasTv;
+        document.getElementById("editAc").checked = room.hasAirConditioner;
+        document.getElementById("editFridge").checked = room.hasFridge;
+        document.getElementById("editExtended").checked = room.roomExtendedStatus;
+
+        document.getElementById("editRoomModal").style.display = "flex";
+    }
+
     function openCheckoutRentingModal(renting) {
         selectedRenting = renting;
 
@@ -530,6 +646,9 @@
         document.getElementById("editEmployeeModal").style.display = "none";
     });
 
+    document.getElementById("closeEditRoomModal").addEventListener("click", () => {
+        document.getElementById("editRoomModal").style.display = "none";
+    });
     // load employee
     document.getElementById("loadEmployeeButton").addEventListener("click", async () => {
         const ssn = document.getElementById("editEmployeeSsn").value.trim();
@@ -555,6 +674,76 @@
         } catch {
             showMessage("Employee not found", "error");
         }
+    });
+
+    document.getElementById("loadRoomsManageButton").addEventListener("click", async () => {
+        const ssn = employeeSsnInput.value.trim();
+
+        const res = await fetch(`/api/employee/rooms?ssn=${ssn}`);
+        const rooms = await res.json();
+
+        const body = document.getElementById("manageRoomsBody");
+        body.innerHTML = "";
+
+        rooms.forEach(room => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+            <td>${room.roomNumber}</td>
+            <td>${room.price}</td>
+            <td>${room.roomCapacity}</td>
+            <td>${room.roomViewType}</td>
+            <td>${room.damageStatus}</td>
+        `;
+
+            const btn = document.createElement("button");
+            btn.textContent = "Edit";
+
+            btn.onclick = () => openEditRoom(room);
+
+            const td = document.createElement("td");
+            td.appendChild(btn);
+
+            row.appendChild(td);
+            body.appendChild(row);
+        });
+
+        document.getElementById("manageRoomsTable").style.display = "table";
+    });
+
+    document.getElementById("saveRoomButton").addEventListener("click", async () => {
+        const ssn = employeeSsnInput.value.trim();
+
+        const updatedRoom = {
+            hotelId: selectedRoomEdit.hotelId,
+            roomNumber: selectedRoomEdit.roomNumber,
+            price: parseFloat(document.getElementById("editPrice").value),
+            roomCapacity: parseInt(document.getElementById("editCapacity").value),
+            roomViewType: document.getElementById("editView").value,
+            damageStatus: document.getElementById("editDamage").value,
+            problemDescription: document.getElementById("editProblemDescription").value.trim(),
+            hasTv: document.getElementById("editTv").checked,
+            hasAirConditioner: document.getElementById("editAc").checked,
+            hasFridge: document.getElementById("editFridge").checked,
+            roomExtendedStatus: document.getElementById("editExtended").checked
+        };
+
+        const res = await fetch(`/api/employee/update-room?ssn=${encodeURIComponent(ssn)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedRoom)
+        });
+
+        const text = await res.text();
+
+        if (!res.ok) {
+            alert(text || "Update failed");
+            return;
+        }
+
+        alert("Room updated!");
+        document.getElementById("editRoomModal").style.display = "none";
+        document.getElementById("loadRoomsManageButton").click();
     });
 
     // update employee
