@@ -2,6 +2,7 @@ package ca.ehotels.backend.controller;
 
 import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.CreateBookingRequest;
+import ca.ehotels.backend.model.CustomerDto;
 import ca.ehotels.backend.repository.BookingRepository;
 import ca.ehotels.backend.repository.CustomerSearchRepository;
 import ca.ehotels.backend.model.CreateCustomerRequest;
@@ -68,6 +69,22 @@ public class CustomerController {
     @GetMapping("/areas")
     public List<String> getAreas() {
         return customerSearchRepository.getAreas();
+    }
+
+    @GetMapping("/get")
+    public CustomerDto getCustomer(@RequestParam String license) {
+        return customerRepository.getCustomer(license);
+    }
+
+    @PostMapping("/update")
+    public ResponseEntity<String> updateCustomer(@RequestBody CustomerDto request) {
+        int rows = customerRepository.updateCustomer(request);
+
+        if (rows == 0) {
+            return ResponseEntity.badRequest().body("Update failed");
+        }
+
+        return ResponseEntity.ok("Customer updated");
     }
 
     @PostMapping("/book")

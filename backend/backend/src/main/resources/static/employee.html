@@ -198,7 +198,10 @@
 <a class="top-link" href="/index.html">← Back to home</a>
 
 <div class="container">
-    <h1>Employee Interface</h1>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0;">Employee Interface</h1>
+        <button id="openEditEmployeeModalButton">Edit Profile</button>
+    </div>
     <p>Enter your employee SSN and the dates to load available rooms from the hotel where you work.</p>
 
     <div class="section" style="margin-top:0; padding-top:0; border-top:none;">
@@ -411,6 +414,57 @@
     </div>
 </div>
 
+<div id="editEmployeeModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEditEmployeeModal" class="close-button">&times;</span>
+        <h2>Edit Employee Profile</h2>
+
+        <div class="field">
+            <label>SSN</label>
+            <input type="text" id="editEmployeeSsn">
+        </div>
+
+        <button id="loadEmployeeButton" style="margin-top:10px;">Load Info</button>
+
+        <div id="editEmployeeForm" style="display:none; margin-top:15px;">
+
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" id="editEmployeeFirstName">
+            </div>
+
+            <div class="field">
+                <label>Middle Name</label>
+                <input type="text" id="editEmployeeMiddleName">
+            </div>
+
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" id="editEmployeeLastName">
+            </div>
+
+            <div class="field">
+                <label>Street Name</label>
+                <input type="text" id="editEmployeeStreetName">
+            </div>
+
+            <div class="field">
+                <label>Street Number</label>
+                <input type="text" id="editEmployeeStreetNumber">
+            </div>
+
+            <div class="field">
+                <label>Postal Code</label>
+                <input type="text" id="editEmployeePostalCode">
+            </div>
+
+            <button id="updateEmployeeButton" style="margin-top:15px;">
+                Update Info
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     let selectedRoom = null;
     let selectedBooking = null;
@@ -466,6 +520,72 @@
 
         document.getElementById("checkoutRentingModal").style.display = "flex";
     }
+
+    // open modal
+    document.getElementById("openEditEmployeeModalButton").addEventListener("click", () => {
+        document.getElementById("editEmployeeModal").style.display = "flex";
+    });
+
+    document.getElementById("closeEditEmployeeModal").addEventListener("click", () => {
+        document.getElementById("editEmployeeModal").style.display = "none";
+    });
+
+    // load employee
+    document.getElementById("loadEmployeeButton").addEventListener("click", async () => {
+        const ssn = document.getElementById("editEmployeeSsn").value.trim();
+
+        if (!ssn) {
+            showMessage("Enter SSN", "error");
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/employee/get?ssn=${encodeURIComponent(ssn)}`);
+            const data = await res.json();
+
+            document.getElementById("editEmployeeFirstName").value = data.firstName || "";
+            document.getElementById("editEmployeeMiddleName").value = data.middleName || "";
+            document.getElementById("editEmployeeLastName").value = data.lastName || "";
+            document.getElementById("editEmployeeStreetName").value = data.streetName || "";
+            document.getElementById("editEmployeeStreetNumber").value = data.streetNumber || "";
+            document.getElementById("editEmployeePostalCode").value = data.postalCode || "";
+
+            document.getElementById("editEmployeeForm").style.display = "block";
+
+        } catch {
+            showMessage("Employee not found", "error");
+        }
+    });
+
+    // update employee
+    document.getElementById("updateEmployeeButton").addEventListener("click", async () => {
+        const ssn = document.getElementById("editEmployeeSsn").value;
+
+        try {
+            const res = await fetch("/api/employee/update", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    ssn: ssn,
+                    firstName: document.getElementById("editEmployeeFirstName").value,
+                    middleName: document.getElementById("editEmployeeMiddleName").value,
+                    lastName: document.getElementById("editEmployeeLastName").value,
+                    streetName: document.getElementById("editEmployeeStreetName").value,
+                    streetNumber: document.getElementById("editEmployeeStreetNumber").value,
+                    postalCode: document.getElementById("editEmployeePostalCode").value
+                })
+            });
+
+            const text = await res.text();
+
+            if (!res.ok) throw new Error(text);
+
+            showMessage("Employee updated successfully", "success");
+
+        } catch (err) {
+            showMessage(err.message, "error");
+        }
+    });
 
     function closeCheckoutRentingModal() {
         document.getElementById("checkoutRentingModal").style.display = "none";
