@@ -5,6 +5,7 @@ import ca.ehotels.backend.model.BookingDto;
 import ca.ehotels.backend.model.CheckoutRentingRequest;
 import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
+import ca.ehotels.backend.model.EmployeeDto;
 import ca.ehotels.backend.model.EmployeeInfoDto;
 import ca.ehotels.backend.model.RentingDto;
 import ca.ehotels.backend.repository.EmployeeRepository;
@@ -154,5 +155,30 @@ public class EmployeeController {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Checkout failed: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/get")
+    public ResponseEntity<?> getEmployee(@RequestParam String ssn) {
+        try {
+            EmployeeDto employee = employeeRepository.getEmployee(ssn);
+            return ResponseEntity.ok(employee);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Employee not found.");
+        }
+    }
+
+    @PostMapping("/update")
+    public ResponseEntity<String> updateEmployee(@RequestBody EmployeeDto request) {
+        if (request.getSsn() == null || request.getSsn().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("SSN is required.");
+        }
+
+        int rows = employeeRepository.updateEmployee(request);
+
+        if (rows == 0) {
+            return ResponseEntity.badRequest().body("Update failed.");
+        }
+
+        return ResponseEntity.ok("Employee updated successfully.");
     }
 }

@@ -163,7 +163,11 @@
 <a class="top-link" href="/index.html">← Back to home</a>
 
 <div class="container">
-    <h1>Search for available rooms</h1>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0;">Search for available rooms</h1>
+        <button id="openEditCustomerModalButton">Edit Profile</button>
+    </div>
 
     <div class="form-grid">
         <div class="field">
@@ -314,6 +318,52 @@
     </div>
 </div>
 
+<div id="editCustomerModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEditCustomerModal" class="close-button">&times;</span>
+        <h2>Edit Customer Profile</h2>
+
+        <div class="field">
+            <label>Driving License Number</label>
+            <input type="text" id="editLicenseInput">
+        </div>
+
+        <button id="loadCustomerButton" style="margin-top:10px;">Load Info</button>
+
+        <div id="editCustomerForm" style="display:none; margin-top:15px;">
+
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" id="editFirstName">
+            </div>
+
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" id="editLastName">
+            </div>
+
+            <div class="field">
+                <label>Street Name</label>
+                <input type="text" id="editStreetName">
+            </div>
+
+            <div class="field">
+                <label>Street Number</label>
+                <input type="text" id="editStreetNumber">
+            </div>
+
+            <div class="field">
+                <label>Postal Code</label>
+                <input type="text" id="editPostalCode">
+            </div>
+
+            <button id="updateCustomerButton" style="margin-top:15px;">
+                Update Info
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
     const STORAGE_KEY = "customerForm";
     let selectedRoom = null;
@@ -338,6 +388,70 @@
     function closeCreateCustomerModal() {
         document.getElementById("createCustomerModal").style.display = "none";
     }
+
+    // open/close modal
+    document.getElementById("openEditCustomerModalButton").addEventListener("click", () => {
+        document.getElementById("editCustomerModal").style.display = "flex";
+    });
+
+    document.getElementById("closeEditCustomerModal").addEventListener("click", () => {
+        document.getElementById("editCustomerModal").style.display = "none";
+    });
+
+    // load customer info
+    document.getElementById("loadCustomerButton").addEventListener("click", async () => {
+        const license = document.getElementById("editLicenseInput").value.trim();
+
+        if (!license) {
+            showMessage("Enter a license number", "error");
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/customer/get?license=${encodeURIComponent(license)}`);
+            const data = await res.json();
+
+            document.getElementById("editFirstName").value = data.firstName;
+            document.getElementById("editLastName").value = data.lastName;
+            document.getElementById("editStreetName").value = data.streetName;
+            document.getElementById("editStreetNumber").value = data.streetNumber;
+            document.getElementById("editPostalCode").value = data.postalCode;
+
+            document.getElementById("editCustomerForm").style.display = "block";
+
+        } catch (err) {
+            showMessage("Customer not found", "error");
+        }
+    });
+
+    // update customer
+    document.getElementById("updateCustomerButton").addEventListener("click", async () => {
+        const license = document.getElementById("editLicenseInput").value.trim();
+
+        try {
+            const res = await fetch("/api/customer/update", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    drivingLicenseNumber: license,
+                    firstName: document.getElementById("editFirstName").value,
+                    lastName: document.getElementById("editLastName").value,
+                    streetName: document.getElementById("editStreetName").value,
+                    streetNumber: document.getElementById("editStreetNumber").value,
+                    postalCode: document.getElementById("editPostalCode").value
+                })
+            });
+
+            const text = await res.text();
+
+            if (!res.ok) throw new Error(text);
+
+            showMessage("Customer updated successfully", "success");
+
+        } catch (err) {
+            showMessage(err.message, "error");
+        }
+    });
 
     document.getElementById("openCreateCustomerModalButton").addEventListener("click", openCreateCustomerModal);
     document.getElementById("closeCreateCustomerModal").addEventListener("click", closeCreateCustomerModal);

@@ -5,6 +5,7 @@ import ca.ehotels.backend.model.BookingDto;
 import ca.ehotels.backend.model.CheckoutRentingRequest;
 import ca.ehotels.backend.model.ConvertBookingRequest;
 import ca.ehotels.backend.model.CreateRentingRequest;
+import ca.ehotels.backend.model.EmployeeDto;
 import ca.ehotels.backend.model.EmployeeInfoDto;
 import ca.ehotels.backend.model.RentingDto;
 import org.springframework.jdbc.core.RowMapper;
@@ -226,60 +227,54 @@ public class EmployeeRepository {
     @Transactional
     public int convertBookingToRenting(ConvertBookingRequest request) {
         String archiveBookingSql = """
-        UPDATE booking
-        SET archive_status = TRUE,
-            check_in_time = CURRENT_TIMESTAMP
-        WHERE booking_id = :bookingId
-          AND archive_status = FALSE
-        """;
+            UPDATE booking
+            SET archive_status = TRUE,
+                check_in_time = CURRENT_TIMESTAMP
+            WHERE booking_id = :bookingId
+              AND archive_status = FALSE
+            """;
 
         String insertRentingSql = """
-        INSERT INTO renting (
-            ssn,
-            hotel_id,
-            room_number,
-            booking_id,
-            driving_license_number,
-            start_datetime,
-            end_datetime,
-            actual_check_in_time,
-            archive_status,
-            is_paid,
-            paid_on,
-            customer_name_snapshot,
-            hotel_name_snapshot,
-            area_snapshot,
-            room_price_snapshot
-        )
-        SELECT
-            :ssn,
-            b.hotel_id,
-            b.room_number,
-            b.booking_id,
-            b.driving_license_number,
-
-            -- planned times (from booking)
-            b.start_day::timestamp + INTERVAL '15 hours',
-            b.end_day::timestamp + INTERVAL '11 hours',
-
-            -- actual check-in
-            CURRENT_TIMESTAMP,
-
-            FALSE,
-            TRUE,
-            CURRENT_TIMESTAMP,
-
-            b.customer_name_snapshot,
-            b.hotel_name_snapshot,
-            b.area_snapshot,
-            b.room_price_snapshot
-        FROM booking b
-        JOIN works_as w
-          ON w.hotel_id = b.hotel_id
-        WHERE b.booking_id = :bookingId
-          AND w.ssn = :ssn
-          AND b.archive_status = TRUE
-        """;
+            INSERT INTO renting (
+                ssn,
+                hotel_id,
+                room_number,
+                booking_id,
+                driving_license_number,
+                start_datetime,
+                end_datetime,
+                actual_check_in_time,
+                archive_status,
+                is_paid,
+                paid_on,
+                customer_name_snapshot,
+                hotel_name_snapshot,
+                area_snapshot,
+                room_price_snapshot
+            )
+            SELECT
+                :ssn,
+                b.hotel_id,
+                b.room_number,
+                b.booking_id,
+                b.driving_license_number,
+                b.start_day::timestamp + INTERVAL '15 hours',
+                b.end_day::timestamp + INTERVAL '11 hours',
+                CURRENT_TIMESTAMP,
+                FALSE,
+                TRUE,
+                CURRENT_TIMESTAMP,
+                b.customer_name_snapshot,
+                b.hotel_name_snapshot,
+                b.area_snapshot,
+                b.room_price_snapshot
+            FROM booking b
+            JOIN works_as w
+              ON w.hotel_id = b.hotel_id
+            WHERE b.booking_id = :bookingId
+              AND w.ssn = :ssn
+              AND b.archive_status = TRUE
+            """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ssn", request.getSsn())
@@ -349,21 +344,69 @@ public class EmployeeRepository {
 
     public int checkoutRenting(CheckoutRentingRequest request) {
         String sql = """
-        UPDATE renting
-        SET archive_status = TRUE,
-            actual_check_out_time = CURRENT_TIMESTAMP
-        WHERE renting_id = :rentingId
-          AND archive_status = FALSE
-          AND hotel_id IN (
-              SELECT hotel_id
-              FROM works_as
-              WHERE ssn = :ssn
-          )
-        """;
+            UPDATE renting
+            SET archive_status = TRUE,
+                actual_check_out_time = CURRENT_TIMESTAMP
+            WHERE renting_id = :rentingId
+              AND archive_status = FALSE
+              AND hotel_id IN (
+                  SELECT hotel_id
+                  FROM works_as
+                  WHERE ssn = :ssn
+              )
+            """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ssn", request.getSsn())
                 .addValue("rentingId", request.getRentingId());
+
+        return jdbcTemplate.update(sql, params);
+    }
+
+    public EmployeeDto getEmployee(String ssn) {
+        String sql = """
+            SELECT *
+            FROM employee
+            WHERE ssn = :ssn
+            """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                new MapSqlParameterSource("ssn", ssn),
+                (rs, rowNum) -> {
+                    EmployeeDto e = new EmployeeDto();
+                    e.setSsn(rs.getString("ssn"));
+                    e.setFirstName(rs.getString("first_name"));
+                    e.setMiddleName(rs.getString("middle_name"));
+                    e.setLastName(rs.getString("last_name"));
+                    e.setStreetName(rs.getString("street_name"));
+                    e.setStreetNumber(rs.getString("street_number"));
+                    e.setPostalCode(rs.getString("postal_code"));
+                    return e;
+                }
+        );
+    }
+
+    public int updateEmployee(EmployeeDto request) {
+        String sql = """
+            UPDATE employee
+            SET first_name = :firstName,
+                middle_name = :middleName,
+                last_name = :lastName,
+                street_name = :streetName,
+                street_number = :streetNumber,
+                postal_code = :postalCode
+            WHERE ssn = :ssn
+            """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("ssn", request.getSsn())
+                .addValue("firstName", request.getFirstName())
+                .addValue("middleName", request.getMiddleName())
+                .addValue("lastName", request.getLastName())
+                .addValue("streetName", request.getStreetName())
+                .addValue("streetNumber", request.getStreetNumber())
+                .addValue("postalCode", request.getPostalCode());
 
         return jdbcTemplate.update(sql, params);
     }
