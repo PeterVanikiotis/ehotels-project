@@ -229,6 +229,7 @@
 
     <div id="message" class="message"></div>
     <div id="capacitySummary" class="message info" style="display:none;"></div>
+    <div id="areaAvailabilitySummary" class="message info" style="display:none;"></div>
 
     <table id="resultsTable" style="display:none;">
         <thead>
@@ -380,6 +381,7 @@
     const maxPrice = document.getElementById("maxPrice");
     const hotel = document.getElementById("hotel");
     const capacitySummary = document.getElementById("capacitySummary");
+    const areaAvailabilitySummary = document.getElementById("areaAvailabilitySummary");
     const searchButton = document.getElementById("searchButton");
     const message = document.getElementById("message");
     const resultsTable = document.getElementById("resultsTable");
@@ -608,6 +610,19 @@
         }
     }
 
+    async function loadAvailableRoomsPerArea(startDateValue, endDateValue) {
+        const response = await fetch(
+            `/api/customer/available-rooms-per-area?startDate=${encodeURIComponent(startDateValue)}&endDate=${encodeURIComponent(endDateValue)}`
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Failed to load available rooms per area.");
+        }
+
+        return await response.json();
+    }
+
     function yesNo(value) {
         return value ? "Yes" : "No";
     }
@@ -666,14 +681,17 @@
         showMessage("Searching...", "info");
 
         try {
-            const response = await fetch(`/api/customer/search-rooms?${params.toString()}`);
+            const [roomsResponse, areaAvailability] = await Promise.all([
+                fetch(`/api/customer/search-rooms?${params.toString()}`),
+                loadAvailableRoomsPerArea(startDate.value, endDate.value)
+            ]);
 
-            if (!response.ok) {
-                const errorText = await response.text();
+            if (!roomsResponse.ok) {
+                const errorText = await roomsResponse.text();
                 throw new Error(errorText || "Search request failed.");
             }
 
-            const rooms = await response.json();
+            const rooms = await roomsResponse.json();
             resultsBody.innerHTML = "";
 
             if (rooms.length === 0) {
@@ -681,6 +699,18 @@
                 resultsTable.style.display = "none";
                 capacitySummary.style.display = "none";
                 capacitySummary.innerText = "";
+
+                if (areaAvailability.length > 0) {
+                    areaAvailabilitySummary.innerHTML = `
+            <strong>Available rooms by area for selected dates:</strong><br>
+            ${areaAvailability.map(item => `${item.area}: ${item.availableRooms}`).join("<br>")}
+        `;
+                    areaAvailabilitySummary.style.display = "block";
+                } else {
+                    areaAvailabilitySummary.style.display = "none";
+                    areaAvailabilitySummary.innerHTML = "";
+                }
+
                 return;
             }
 
@@ -697,6 +727,17 @@
             } else {
                 capacitySummary.style.display = "none";
                 capacitySummary.innerText = "";
+            }
+
+            if (areaAvailability.length > 0) {
+                areaAvailabilitySummary.innerHTML = `
+        <strong>Available rooms by area for selected dates:</strong><br>
+        ${areaAvailability.map(item => `${item.area}: ${item.availableRooms}`).join("<br>")}
+    `;
+                areaAvailabilitySummary.style.display = "block";
+            } else {
+                areaAvailabilitySummary.style.display = "none";
+                areaAvailabilitySummary.innerHTML = "";
             }
 
             rooms.forEach(room => {
@@ -731,6 +772,8 @@
             resultsTable.style.display = "none";
             capacitySummary.style.display = "none";
             capacitySummary.innerText = "";
+            areaAvailabilitySummary.style.display = "none";
+            areaAvailabilitySummary.innerHTML = "";
         } finally {
             searchButton.disabled = false;
             searchButton.innerText = "Search rooms";
