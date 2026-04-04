@@ -1,13 +1,6 @@
 package ca.ehotels.backend.controller;
 
-import ca.ehotels.backend.model.AvailableRoomDto;
-import ca.ehotels.backend.model.BookingDto;
-import ca.ehotels.backend.model.CheckoutRentingRequest;
-import ca.ehotels.backend.model.ConvertBookingRequest;
-import ca.ehotels.backend.model.CreateRentingRequest;
-import ca.ehotels.backend.model.EmployeeDto;
-import ca.ehotels.backend.model.EmployeeInfoDto;
-import ca.ehotels.backend.model.RentingDto;
+import ca.ehotels.backend.model.*;
 import ca.ehotels.backend.repository.EmployeeRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +49,25 @@ public class EmployeeController {
                 employeeRepository.getAvailableRoomsForEmployeeHotel(ssn, startDate, endDate);
 
         return ResponseEntity.ok(rooms);
+    }
+
+    @GetMapping("/rooms")
+    public ResponseEntity<?> getRooms(@RequestParam String ssn) {
+        return ResponseEntity.ok(employeeRepository.getRoomsForEmployeeHotel(ssn));
+    }
+
+    @PostMapping("/update-room")
+    public ResponseEntity<String> updateRoom(
+            @RequestBody RoomDto room,
+            @RequestParam String ssn) {
+
+        int rows = employeeRepository.updateRoom(room, ssn);
+
+        if (rows == 0) {
+            return ResponseEntity.badRequest().body("Update failed.");
+        }
+
+        return ResponseEntity.ok("Room updated successfully.");
     }
 
     @PostMapping("/rent")

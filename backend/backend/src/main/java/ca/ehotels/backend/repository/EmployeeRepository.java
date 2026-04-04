@@ -1,13 +1,6 @@
 package ca.ehotels.backend.repository;
 
-import ca.ehotels.backend.model.AvailableRoomDto;
-import ca.ehotels.backend.model.BookingDto;
-import ca.ehotels.backend.model.CheckoutRentingRequest;
-import ca.ehotels.backend.model.ConvertBookingRequest;
-import ca.ehotels.backend.model.CreateRentingRequest;
-import ca.ehotels.backend.model.EmployeeDto;
-import ca.ehotels.backend.model.EmployeeInfoDto;
-import ca.ehotels.backend.model.RentingDto;
+import ca.ehotels.backend.model.*;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -387,6 +380,69 @@ public class EmployeeRepository {
         );
     }
 
+    public int updateRoom(RoomDto room, String ssn) {
+        String updateRoomSql = """
+        UPDATE room
+        SET price = :price,
+            room_capacity = :capacity,
+            room_view_type = :view,
+            damage_status = :damage,
+            has_tv = :tv,
+            has_air_conditioner = :ac,
+            has_fridge = :fridge,
+            room_extended_status = :extended
+        WHERE hotel_id = :hotelId
+          AND room_number = :roomNumber
+          AND hotel_id IN (
+              SELECT hotel_id FROM works_as WHERE ssn = :ssn
+          )
+    """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("price", room.getPrice())
+                .addValue("capacity", room.getRoomCapacity())
+                .addValue("view", room.getRoomViewType())
+                .addValue("damage", room.getDamageStatus())
+                .addValue("tv", room.getHasTv())
+                .addValue("ac", room.getHasAirConditioner())
+                .addValue("fridge", room.getHasFridge())
+                .addValue("extended", room.getRoomExtendedStatus())
+                .addValue("hotelId", room.getHotelId())
+                .addValue("roomNumber", room.getRoomNumber())
+                .addValue("ssn", ssn);
+
+        int rowsUpdated = jdbcTemplate.update(updateRoomSql, params);
+
+        if (rowsUpdated == 0) {
+            return 0;
+        }
+
+        if (room.getProblemDescription() != null && !room.getProblemDescription().trim().isEmpty()) {
+            String insertProblemSql = """
+            INSERT INTO room_problems_or_damages (
+                hotel_id,
+                room_number,
+                problems_or_damages
+            )
+            VALUES (
+                :hotelId,
+                :roomNumber,
+                :problemDescription
+            )
+            ON CONFLICT DO NOTHING
+        """;
+
+            MapSqlParameterSource problemParams = new MapSqlParameterSource()
+                    .addValue("hotelId", room.getHotelId())
+                    .addValue("roomNumber", room.getRoomNumber())
+                    .addValue("problemDescription", room.getProblemDescription().trim());
+
+            jdbcTemplate.update(insertProblemSql, problemParams);
+        }
+
+        return rowsUpdated;
+    }
+
     public int updateEmployee(EmployeeDto request) {
         String sql = """
             UPDATE employee
@@ -409,6 +465,33 @@ public class EmployeeRepository {
                 .addValue("postalCode", request.getPostalCode());
 
         return jdbcTemplate.update(sql, params);
+    }
+    public List<RoomDto> getRoomsForEmployeeHotel(String ssn) {
+        String sql = """
+        SELECT r.*
+        FROM room r
+        JOIN works_as w ON w.hotel_id = r.hotel_id
+        WHERE w.ssn = :ssn
+        ORDER BY r.room_number
+    """;
+
+        return jdbcTemplate.query(sql,
+                new MapSqlParameterSource("ssn", ssn),
+                (rs, rowNum) -> {
+                    RoomDto dto = new RoomDto();
+                    dto.setHotelId(rs.getInt("hotel_id"));
+                    dto.setRoomNumber(rs.getInt("room_number"));
+                    dto.setPrice(rs.getBigDecimal("price"));
+                    dto.setRoomCapacity(rs.getInt("room_capacity"));
+                    dto.setRoomViewType(rs.getString("room_view_type"));
+                    dto.setDamageStatus(rs.getString("damage_status"));
+                    dto.setHasTv(rs.getBoolean("has_tv"));
+                    dto.setHasAirConditioner(rs.getBoolean("has_air_conditioner"));
+                    dto.setHasFridge(rs.getBoolean("has_fridge"));
+                    dto.setRoomExtendedStatus(rs.getBoolean("room_extended_status"));
+                    return dto;
+                }
+        );
     }
 
     private static class AvailableRoomRowMapper implements RowMapper<AvailableRoomDto> {
