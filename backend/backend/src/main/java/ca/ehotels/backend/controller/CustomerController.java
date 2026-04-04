@@ -3,6 +3,7 @@ package ca.ehotels.backend.controller;
 import ca.ehotels.backend.model.AvailableRoomDto;
 import ca.ehotels.backend.model.CreateBookingRequest;
 import ca.ehotels.backend.model.CustomerDto;
+import ca.ehotels.backend.model.HotelCapacityDto;
 import ca.ehotels.backend.repository.BookingRepository;
 import ca.ehotels.backend.repository.CustomerSearchRepository;
 import ca.ehotels.backend.model.CreateCustomerRequest;
@@ -40,7 +41,7 @@ public class CustomerController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Integer capacity,
             @RequestParam(required = false) String area,
-            @RequestParam(required = false) List<Integer> chainIds,
+            @RequestParam(required = false) Integer hotelId,
             @RequestParam(required = false) Integer rating,
             @RequestParam(required = false) Integer minTotalRooms,
             @RequestParam(required = false) Double maxPrice
@@ -54,16 +55,18 @@ public class CustomerController {
                 endDate,
                 capacity,
                 area,
-                chainIds,
+                hotelId,
                 rating,
                 minTotalRooms,
                 maxPrice
         );
     }
 
-    @GetMapping("/hotel-chains")
-    public List<Map<String, Object>> getHotelChains() {
-        return customerSearchRepository.getHotelChains();
+    @GetMapping("/hotels-with-capacity")
+    public List<HotelCapacityDto> getHotelsWithCapacity(
+            @RequestParam(required = false) String area
+    ) {
+        return customerSearchRepository.getHotelsWithCapacity(area);
     }
 
     @GetMapping("/areas")
