@@ -1,6 +1,5 @@
 -- schema.sql
 -- This script only creates the tables/constraints.
-
 -- Data reset + inserts live in populate.sql.
 
 CREATE TABLE IF NOT EXISTS hotel_chain (
