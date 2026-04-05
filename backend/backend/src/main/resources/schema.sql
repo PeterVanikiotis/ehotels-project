@@ -90,7 +90,9 @@ CREATE TABLE IF NOT EXISTS hotel (
     UNIQUE (street_name, street_number, postal_code),
 
     -- Constraint ensures employee_street_number > 0
-    CONSTRAINT chk_hotel_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
+    CONSTRAINT chk_hotel_street_num
+        CHECK (street_number ~ '^[1-9][0-9]*$'),
+    CONSTRAINT uq_hotel_address
         UNIQUE (street_name, street_number, postal_code)
     );
 
