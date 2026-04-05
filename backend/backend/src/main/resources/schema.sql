@@ -16,9 +16,11 @@ CREATE TABLE IF NOT EXISTS hotel_chain_email (
     email_address VARCHAR(255) NOT NULL,
     PRIMARY KEY (central_office_id, email_address),
     CONSTRAINT fk_hotel_chain_email
-    FOREIGN KEY (central_office_id)
-    REFERENCES hotel_chain(central_office_id)
-    ON DELETE CASCADE
+        FOREIGN KEY (central_office_id)
+        REFERENCES hotel_chain(central_office_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_hotel_chain_email_format
+        CHECK (email_address LIKE '%@%')
     );
 
 CREATE TABLE IF NOT EXISTS hotel_chain_phone (
@@ -26,9 +28,11 @@ CREATE TABLE IF NOT EXISTS hotel_chain_phone (
     phone_number VARCHAR(30) NOT NULL,
     PRIMARY KEY (central_office_id, phone_number),
     CONSTRAINT fk_hotel_chain_phone
-    FOREIGN KEY (central_office_id)
-    REFERENCES hotel_chain(central_office_id)
-    ON DELETE CASCADE
+        FOREIGN KEY (central_office_id)
+        REFERENCES hotel_chain(central_office_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_hotel_chain_phone_length
+        CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
 CREATE TABLE IF NOT EXISTS employee (
@@ -68,19 +72,19 @@ CREATE TABLE IF NOT EXISTS hotel (
     number_of_rooms INT NOT NULL,
     rating INT NOT NULL,
     CONSTRAINT fk_hotel_chain
-    FOREIGN KEY (central_office_id)
-    REFERENCES hotel_chain(central_office_id)
-    ON DELETE CASCADE,
+        FOREIGN KEY (central_office_id)
+        REFERENCES hotel_chain(central_office_id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_hotel_manager
-    FOREIGN KEY (manager_ssn)
-    REFERENCES manager(ssn)
-    ON DELETE RESTRICT,
+        FOREIGN KEY (manager_ssn)
+        REFERENCES manager(ssn)
+        ON DELETE RESTRICT,
     CONSTRAINT chk_hotel_number_of_rooms
-    CHECK (number_of_rooms > 0),
+        CHECK (number_of_rooms > 0),
     CONSTRAINT chk_hotel_rating
-    CHECK (rating BETWEEN 1 AND 5),
+        CHECK (rating BETWEEN 1 AND 5),
     CONSTRAINT uq_hotel_address
-    UNIQUE (street_name, street_number, postal_code)
+        UNIQUE (street_name, street_number, postal_code)
     );
 
 CREATE TABLE IF NOT EXISTS hotel_email (
@@ -88,9 +92,11 @@ CREATE TABLE IF NOT EXISTS hotel_email (
     email_address VARCHAR(255) NOT NULL,
     PRIMARY KEY (hotel_id, email_address),
     CONSTRAINT fk_hotel_email
-    FOREIGN KEY (hotel_id)
-    REFERENCES hotel(hotel_id)
-    ON DELETE CASCADE
+        FOREIGN KEY (hotel_id)
+        REFERENCES hotel(hotel_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_hotel_email_format
+        CHECK (email_address LIKE '%@%')
     );
 
 CREATE TABLE IF NOT EXISTS hotel_phone (
@@ -98,9 +104,11 @@ CREATE TABLE IF NOT EXISTS hotel_phone (
     phone_number VARCHAR(30) NOT NULL,
     PRIMARY KEY (hotel_id, phone_number),
     CONSTRAINT fk_hotel_phone
-    FOREIGN KEY (hotel_id)
-    REFERENCES hotel(hotel_id)
-    ON DELETE CASCADE
+        FOREIGN KEY (hotel_id)
+        REFERENCES hotel(hotel_id)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_hotel_phone_length
+        CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
 CREATE TABLE IF NOT EXISTS works_as (
@@ -109,17 +117,17 @@ CREATE TABLE IF NOT EXISTS works_as (
     hotel_id INT NOT NULL,
     PRIMARY KEY (ssn, role_name, hotel_id),
     CONSTRAINT fk_works_as_employee
-    FOREIGN KEY (ssn)
-    REFERENCES employee(ssn)
-    ON DELETE CASCADE,
+        FOREIGN KEY (ssn)
+        REFERENCES employee(ssn)
+        ON DELETE CASCADE,
     CONSTRAINT fk_works_as_role
-    FOREIGN KEY (role_name)
-    REFERENCES role(role_name)
-    ON DELETE RESTRICT,
+        FOREIGN KEY (role_name)
+        REFERENCES role(role_name)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_works_as_hotel
-    FOREIGN KEY (hotel_id)
-    REFERENCES hotel(hotel_id)
-    ON DELETE CASCADE
+        FOREIGN KEY (hotel_id)
+        REFERENCES hotel(hotel_id)
+        ON DELETE CASCADE
     );
 
 CREATE TABLE IF NOT EXISTS room (
@@ -172,9 +180,11 @@ CREATE TABLE IF NOT EXISTS customer_phone (
     phone_number VARCHAR(30) NOT NULL,
     PRIMARY KEY (driving_license_number, phone_number),
     CONSTRAINT fk_customer_phone_customer
-    FOREIGN KEY (driving_license_number)
-    REFERENCES customer(driving_license_number)
-    ON DELETE CASCADE
+        FOREIGN KEY (driving_license_number)
+        REFERENCES customer(driving_license_number)
+        ON DELETE CASCADE,
+    CONSTRAINT chk_customer_phone_length
+        CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
 CREATE TABLE IF NOT EXISTS booking (
@@ -486,3 +496,47 @@ CREATE TRIGGER trg_prevent_overlapping_rentings
                          FOR EACH ROW
                          EXECUTE FUNCTION prevent_overlapping_rentings();
 
+-- =========================================
+-- TRIGGER FUNCTION 3:
+-- Ensure a hotel always has at least one contact method
+-- =========================================
+CREATE OR REPLACE FUNCTION check_hotel_has_contact_method()
+RETURNS TRIGGER
+AS '
+DECLARE
+    target_hotel_id INT;
+BEGIN
+    IF TG_TABLE_NAME = ''hotel_email'' OR TG_TABLE_NAME = ''hotel_phone'' THEN
+        target_hotel_id := COALESCE(NEW.hotel_id, OLD.hotel_id);
+
+        IF NOT EXISTS (
+            SELECT 1
+            FROM hotel_email he
+            WHERE he.hotel_id = target_hotel_id
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM hotel_phone hp
+            WHERE hp.hotel_id = target_hotel_id
+        ) THEN
+            RAISE EXCEPTION ''Hotel must have at least one contact method.'';
+        END IF;
+    END IF;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+'
+LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_check_hotel_contact_email ON hotel_email;
+DROP TRIGGER IF EXISTS trg_check_hotel_contact_phone ON hotel_phone;
+
+CREATE TRIGGER trg_check_hotel_contact_email
+    AFTER INSERT OR DELETE OR UPDATE ON hotel_email
+FOR EACH ROW
+EXECUTE FUNCTION check_hotel_has_contact_method();
+
+CREATE TRIGGER trg_check_hotel_contact_phone
+    AFTER INSERT OR DELETE OR UPDATE ON hotel_phone
+FOR EACH ROW
+EXECUTE FUNCTION check_hotel_has_contact_method();
