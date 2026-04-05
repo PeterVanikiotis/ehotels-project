@@ -138,10 +138,8 @@ CREATE TABLE IF NOT EXISTS room (
     FOREIGN KEY (hotel_id)
     REFERENCES hotel(hotel_id)
     ON DELETE CASCADE,
-    CONSTRAINT chk_room_price
-    CHECK (price > 0),
-    CONSTRAINT chk_room_capacity
-    CHECK (room_capacity > 0),
+    CONSTRAINT chk_room_price CHECK (price > 0),
+    CONSTRAINT chk_room_capacity CHECK (room_capacity > 0),
     CONSTRAINT chk_room_view_type
     CHECK (room_view_type IN ('sea', 'mountain', 'city', 'garden', 'pool')),
     CONSTRAINT chk_room_damage_status
@@ -181,9 +179,9 @@ CREATE TABLE IF NOT EXISTS customer_phone (
 
 CREATE TABLE IF NOT EXISTS booking (
     booking_id SERIAL PRIMARY KEY,
-    driving_license_number VARCHAR(50),
-    hotel_id INT,
-    room_number INT,
+    driving_license_number VARCHAR(50) NOT NULL,
+    hotel_id INT NOT NULL,
+    room_number INT NOT NULL,
     start_day DATE NOT NULL,
     end_day DATE NOT NULL,
     archive_status BOOLEAN NOT NULL DEFAULT FALSE,
@@ -195,31 +193,26 @@ CREATE TABLE IF NOT EXISTS booking (
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_booking_customer
-    FOREIGN KEY (driving_license_number)
-    REFERENCES customer(driving_license_number)
-    ON DELETE SET NULL,
+        FOREIGN KEY (driving_license_number)
+        REFERENCES customer(driving_license_number)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_booking_room
-    FOREIGN KEY (hotel_id, room_number)
-    REFERENCES room(hotel_id, room_number)
-    ON DELETE SET NULL,
+        FOREIGN KEY (hotel_id, room_number)
+        REFERENCES room(hotel_id, room_number)
+        ON DELETE RESTRICT,
     CONSTRAINT chk_booking_dates
-    CHECK (end_day > start_day),
+        CHECK (end_day > start_day),
     CONSTRAINT chk_booking_room_price_snapshot
-    CHECK (room_price_snapshot > 0),
-    CONSTRAINT chk_booking_active_references
-    CHECK (
-              archive_status = TRUE
-              OR (driving_license_number IS NOT NULL AND hotel_id IS NOT NULL AND room_number IS NOT NULL)
-    )
+        CHECK (room_price_snapshot > 0)
     );
 
 CREATE TABLE IF NOT EXISTS renting (
-    renting_id SERIAL PRIMARY KEY,
-    ssn VARCHAR(20),
-    hotel_id INT,
-    room_number INT,
-    booking_id INT UNIQUE,
-    driving_license_number VARCHAR(50),
+                                       renting_id SERIAL PRIMARY KEY,
+                                       ssn VARCHAR(20) NOT NULL,
+    hotel_id INT NOT NULL,
+    room_number INT NOT NULL,
+    booking_id INT NOT NULL UNIQUE,
+    driving_license_number VARCHAR(50) NOT NULL,
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
     actual_check_in_time TIMESTAMP,
@@ -232,32 +225,27 @@ CREATE TABLE IF NOT EXISTS renting (
     area_snapshot VARCHAR(100) NOT NULL,
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     CONSTRAINT fk_renting_employee
-    FOREIGN KEY (ssn)
-    REFERENCES employee(ssn)
-    ON DELETE SET NULL,
+        FOREIGN KEY (ssn)
+        REFERENCES employee(ssn)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_renting_room
-    FOREIGN KEY (hotel_id, room_number)
-    REFERENCES room(hotel_id, room_number)
-    ON DELETE SET NULL,
+        FOREIGN KEY (hotel_id, room_number)
+        REFERENCES room(hotel_id, room_number)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_renting_booking
-    FOREIGN KEY (booking_id)
-    REFERENCES booking(booking_id)
-    ON DELETE SET NULL,
+        FOREIGN KEY (booking_id)
+        REFERENCES booking(booking_id)
+        ON DELETE RESTRICT,
     CONSTRAINT fk_renting_customer
-    FOREIGN KEY (driving_license_number)
-    REFERENCES customer(driving_license_number)
-    ON DELETE SET NULL,
+        FOREIGN KEY (driving_license_number)
+        REFERENCES customer(driving_license_number)
+        ON DELETE RESTRICT,
     CONSTRAINT chk_renting_dates
-    CHECK (end_datetime > start_datetime),
+        CHECK (end_datetime > start_datetime),
     CONSTRAINT chk_renting_paid_on
-    CHECK (paid_on IS NULL OR is_paid = TRUE),
+        CHECK (paid_on IS NULL OR is_paid = TRUE),
     CONSTRAINT chk_renting_room_price_snapshot
-    CHECK (room_price_snapshot > 0),
-    CONSTRAINT chk_renting_active_references
-    CHECK (
-              archive_status = TRUE
-              OR (driving_license_number IS NOT NULL AND hotel_id IS NOT NULL AND room_number IS NOT NULL)
-    )
+        CHECK (room_price_snapshot > 0)
     );
 
 -- =========================================
@@ -497,3 +485,4 @@ CREATE TRIGGER trg_prevent_overlapping_rentings
     BEFORE INSERT OR UPDATE ON renting
                          FOR EACH ROW
                          EXECUTE FUNCTION prevent_overlapping_rentings();
+
