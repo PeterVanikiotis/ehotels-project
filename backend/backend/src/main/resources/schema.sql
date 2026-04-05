@@ -86,9 +86,6 @@ CREATE TABLE IF NOT EXISTS hotel (
         CHECK (number_of_rooms > 0),
     CONSTRAINT chk_hotel_rating
         CHECK (rating BETWEEN 1 AND 5),
-    CONSTRAINT uq_hotel_address
-    UNIQUE (street_name, street_number, postal_code),
-
     -- Constraint ensures employee_street_number > 0
     CONSTRAINT chk_hotel_street_num
         CHECK (street_number ~ '^[1-9][0-9]*$'),
@@ -206,7 +203,6 @@ CREATE TABLE IF NOT EXISTS booking (
     room_number INT NOT NULL,
     start_day DATE NOT NULL,
     end_day DATE NOT NULL,
-    archive_status BOOLEAN NOT NULL DEFAULT FALSE,
     check_in_time TIMESTAMP,
     check_out_time TIMESTAMP,
     customer_name_snapshot VARCHAR(255) NOT NULL,
@@ -228,18 +224,38 @@ CREATE TABLE IF NOT EXISTS booking (
         CHECK (room_price_snapshot > 0)
     );
 
-CREATE TABLE IF NOT EXISTS renting (
-                                       renting_id SERIAL PRIMARY KEY,
-                                       ssn VARCHAR(20) NOT NULL,
+CREATE TABLE IF NOT EXISTS booking_archive (
+    booking_id INT PRIMARY KEY,
+    driving_license_number VARCHAR(50) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
-    booking_id INT NOT NULL UNIQUE,
+    start_day DATE NOT NULL,
+    end_day DATE NOT NULL,
+    check_in_time TIMESTAMP,
+    check_out_time TIMESTAMP,
+    customer_name_snapshot VARCHAR(255) NOT NULL,
+    hotel_name_snapshot VARCHAR(150) NOT NULL,
+    area_snapshot VARCHAR(100) NOT NULL,
+    room_price_snapshot NUMERIC(10,2) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_booking_archive_dates
+    CHECK (end_day > start_day),
+    CONSTRAINT chk_booking_archive_room_price_snapshot
+    CHECK (room_price_snapshot > 0)
+    );
+
+CREATE TABLE IF NOT EXISTS renting (
+    renting_id SERIAL PRIMARY KEY,
+    ssn VARCHAR(20) NOT NULL,
+    hotel_id INT NOT NULL,
+    room_number INT NOT NULL,
+    booking_id INT,
     driving_license_number VARCHAR(50) NOT NULL,
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
     actual_check_in_time TIMESTAMP,
     actual_check_out_time TIMESTAMP,
-    archive_status BOOLEAN NOT NULL DEFAULT FALSE,
     is_paid BOOLEAN NOT NULL DEFAULT FALSE,
     paid_on TIMESTAMP,
     customer_name_snapshot VARCHAR(255) NOT NULL,
@@ -254,6 +270,7 @@ CREATE TABLE IF NOT EXISTS renting (
         FOREIGN KEY (hotel_id, room_number)
         REFERENCES room(hotel_id, room_number)
         ON DELETE RESTRICT,
+    booking_id INT UNIQUE,
     CONSTRAINT fk_renting_booking
         FOREIGN KEY (booking_id)
         REFERENCES booking(booking_id)
@@ -267,6 +284,32 @@ CREATE TABLE IF NOT EXISTS renting (
     CONSTRAINT chk_renting_paid_on
         CHECK (paid_on IS NULL OR is_paid = TRUE),
     CONSTRAINT chk_renting_room_price_snapshot
+        CHECK (room_price_snapshot > 0)
+    );
+
+CREATE TABLE IF NOT EXISTS renting_archive (
+    renting_id INT PRIMARY KEY,
+    ssn VARCHAR(20) NOT NULL,
+    hotel_id INT NOT NULL,
+    room_number INT NOT NULL,
+    booking_id INT NOT NULL,
+    driving_license_number VARCHAR(50) NOT NULL,
+    start_datetime TIMESTAMP NOT NULL,
+    end_datetime TIMESTAMP NOT NULL,
+    actual_check_in_time TIMESTAMP,
+    actual_check_out_time TIMESTAMP,
+    is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+    paid_on TIMESTAMP,
+    customer_name_snapshot VARCHAR(255) NOT NULL,
+    hotel_name_snapshot VARCHAR(150) NOT NULL,
+    area_snapshot VARCHAR(100) NOT NULL,
+    room_price_snapshot NUMERIC(10,2) NOT NULL,
+    archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_renting_archive_dates
+        CHECK (end_datetime > start_datetime),
+    CONSTRAINT chk_renting_archive_paid_on
+        CHECK (paid_on IS NULL OR is_paid = TRUE),
+    CONSTRAINT chk_renting_archive_room_price_snapshot
         CHECK (room_price_snapshot > 0)
     );
 
@@ -375,39 +418,29 @@ CREATE OR REPLACE FUNCTION prevent_overlapping_bookings()
 RETURNS TRIGGER
 AS '
 BEGIN
-    -- If the booking is being archived, do not run overlap checks
-    IF NEW.archive_status = TRUE THEN
-        RETURN NEW;
-    END IF;
-
-    -- Check against existing bookings
     IF EXISTS (
         SELECT 1
         FROM booking b
         WHERE b.hotel_id = NEW.hotel_id
           AND b.room_number = NEW.room_number
           AND b.booking_id <> COALESCE(NEW.booking_id, -1)
-          AND b.archive_status = FALSE
           AND NEW.start_day < b.end_day
           AND NEW.end_day > b.start_day
     ) THEN
         RAISE EXCEPTION ''This room is already booked during the selected dates.'';
     END IF;
 
-    -- Check against existing rentings
     IF EXISTS (
         SELECT 1
         FROM renting r
         WHERE r.hotel_id = NEW.hotel_id
           AND r.room_number = NEW.room_number
-          AND r.archive_status = FALSE
           AND NEW.start_day < r.end_datetime::date
           AND NEW.end_day > r.start_datetime::date
     ) THEN
         RAISE EXCEPTION ''This room is currently rented during the selected dates.'';
     END IF;
 
-    -- Check whether the room is damaged
     IF EXISTS (
         SELECT 1
         FROM room rm
@@ -415,12 +448,7 @@ BEGIN
           AND rm.room_number = NEW.room_number
           AND rm.damage_status <> ''none''
     ) THEN
-        RAISE EXCEPTION ''This room cannot be booked because it is marked as %.'', (
-            SELECT rm.damage_status
-            FROM room rm
-            WHERE rm.hotel_id = NEW.hotel_id
-              AND rm.room_number = NEW.room_number
-        );
+        RAISE EXCEPTION ''This room cannot be booked because it is marked as damaged.'';
     END IF;
 
     RETURN NEW;
@@ -449,34 +477,30 @@ CREATE OR REPLACE FUNCTION prevent_overlapping_rentings()
 RETURNS TRIGGER
 AS '
 BEGIN
-    -- Check against existing rentings
     IF EXISTS (
         SELECT 1
         FROM renting r
         WHERE r.hotel_id = NEW.hotel_id
           AND r.room_number = NEW.room_number
           AND r.renting_id <> COALESCE(NEW.renting_id, -1)
-          AND r.archive_status = FALSE
           AND NEW.start_datetime < r.end_datetime
           AND NEW.end_datetime > r.start_datetime
     ) THEN
         RAISE EXCEPTION ''This room is already rented during the selected time period.'';
     END IF;
 
-    -- Check against existing bookings
     IF EXISTS (
         SELECT 1
         FROM booking b
         WHERE b.hotel_id = NEW.hotel_id
           AND b.room_number = NEW.room_number
-          AND b.archive_status = FALSE
+          AND b.booking_id <> COALESCE(NEW.booking_id, -1)
           AND NEW.start_datetime::date < b.end_day
           AND NEW.end_datetime::date > b.start_day
     ) THEN
         RAISE EXCEPTION ''This room is already booked during the selected time period.'';
     END IF;
 
-    -- Check whether the room is damaged
     IF EXISTS (
         SELECT 1
         FROM room rm
@@ -484,12 +508,7 @@ BEGIN
           AND rm.room_number = NEW.room_number
           AND rm.damage_status <> ''none''
     ) THEN
-        RAISE EXCEPTION ''This room cannot be rented because it is marked as %.'', (
-            SELECT rm.damage_status
-            FROM room rm
-            WHERE rm.hotel_id = NEW.hotel_id
-              AND rm.room_number = NEW.room_number
-        );
+        RAISE EXCEPTION ''This room cannot be rented because it is marked as damaged.'';
     END IF;
 
     RETURN NEW;
