@@ -38,7 +38,11 @@ CREATE TABLE IF NOT EXISTS employee (
     last_name VARCHAR(100) NOT NULL,
     street_name VARCHAR(100) NOT NULL,
     street_number VARCHAR(20) NOT NULL,
-    postal_code VARCHAR(20) NOT NULL
+    postal_code VARCHAR(20) NOT NULL,
+    -- Constraint ensures ssn must be 9 digits (numeric)
+    Constraint chk_ssn_format CHECK (ssn ~ '^[0-9]{9}$'),
+    -- Constraint ensures employee_street_number > 0
+    CONSTRAINT chk_employee_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
     );
 
 CREATE TABLE IF NOT EXISTS manager (
@@ -80,7 +84,10 @@ CREATE TABLE IF NOT EXISTS hotel (
     CONSTRAINT chk_hotel_rating
     CHECK (rating BETWEEN 1 AND 5),
     CONSTRAINT uq_hotel_address
-    UNIQUE (street_name, street_number, postal_code)
+    UNIQUE (street_name, street_number, postal_code),
+
+    -- Constraint ensures employee_street_number > 0
+    CONSTRAINT chk_hotel_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
     );
 
 CREATE TABLE IF NOT EXISTS hotel_email (
@@ -166,7 +173,10 @@ CREATE TABLE IF NOT EXISTS customer (
     street_name VARCHAR(100) NOT NULL,
     street_number VARCHAR(20) NOT NULL,
     postal_code VARCHAR(20) NOT NULL,
-    date_of_registration DATE NOT NULL
+    date_of_registration DATE NOT NULL,
+
+    --customer street num > 0
+    CONSTRAINT chk_customer_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
     );
 
 CREATE TABLE IF NOT EXISTS customer_phone (
@@ -423,6 +433,7 @@ LANGUAGE plpgsql;
 -- Fires before inserting or updating a booking
 -- =========================================
 DROP TRIGGER IF EXISTS trg_prevent_overlapping_bookings ON booking;
+
 
 CREATE TRIGGER trg_prevent_overlapping_bookings
     BEFORE INSERT OR UPDATE ON booking
