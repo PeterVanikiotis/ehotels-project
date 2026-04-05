@@ -1,5 +1,6 @@
 package ca.ehotels.backend.repository;
 
+import ca.ehotels.backend.model.BookingDto;
 import ca.ehotels.backend.model.CreateBookingRequest;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -12,6 +13,55 @@ public class BookingRepository {
 
     public BookingRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public void deleteById(Integer bookingId) {
+        String sql = "DELETE FROM booking WHERE booking_id = :bookingId";
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("bookingId", bookingId);
+
+        jdbcTemplate.update(sql, params);
+    }
+
+    public BookingDto findBookingById(Integer bookingId) {
+        String sql = """
+        SELECT *
+        FROM booking
+        WHERE booking_id = :bookingId
+    """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("bookingId", bookingId);
+
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
+            BookingDto b = new BookingDto();
+            b.setBookingId(rs.getInt("booking_id"));
+            b.setDrivingLicenseNumber(rs.getString("driving_license_number"));
+            b.setHotelId(rs.getInt("hotel_id"));
+            b.setRoomNumber(rs.getInt("room_number"));
+            b.setStartDay(rs.getDate("start_day").toLocalDate());
+            b.setEndDay(rs.getDate("end_day").toLocalDate());
+
+            if (rs.getTimestamp("check_in_time") != null) {
+                b.setCheckInTime(rs.getTimestamp("check_in_time").toLocalDateTime());
+            }
+
+            if (rs.getTimestamp("check_out_time") != null) {
+                b.setCheckOutTime(rs.getTimestamp("check_out_time").toLocalDateTime());
+            }
+
+            b.setCustomerNameSnapshot(rs.getString("customer_name_snapshot"));
+            b.setHotelNameSnapshot(rs.getString("hotel_name_snapshot"));
+            b.setAreaSnapshot(rs.getString("area_snapshot"));
+            b.setRoomPriceSnapshot(rs.getBigDecimal("room_price_snapshot"));
+
+            if (rs.getTimestamp("created_at") != null) {
+                b.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            }
+
+            return b;
+        }).stream().findFirst().orElse(null);
     }
 
     public int createBooking(CreateBookingRequest request) {

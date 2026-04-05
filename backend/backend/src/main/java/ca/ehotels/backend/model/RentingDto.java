@@ -17,6 +17,9 @@ public class RentingDto {
     private String hotelNameSnapshot;
     private String areaSnapshot;
     private BigDecimal roomPriceSnapshot;
+    private LocalDateTime actualCheckInTime;
+    private LocalDateTime actualCheckOutTime;
+    private LocalDateTime paidOn;
 
     public Integer getRentingId() {
         return rentingId;
@@ -120,5 +123,29 @@ public class RentingDto {
 
     public void setRoomPriceSnapshot(BigDecimal roomPriceSnapshot) {
         this.roomPriceSnapshot = roomPriceSnapshot;
+    }
+
+    public LocalDateTime getActualCheckInTime() {
+        return actualCheckInTime;
+    }
+
+    public void setActualCheckInTime(LocalDateTime actualCheckInTime) {
+        this.actualCheckInTime = actualCheckInTime;
+    }
+
+    public LocalDateTime getActualCheckOutTime() {
+        return actualCheckOutTime;
+    }
+
+    public void setActualCheckOutTime(LocalDateTime actualCheckOutTime) {
+        this.actualCheckOutTime = actualCheckOutTime;
+    }
+
+    public LocalDateTime getPaidOn() {
+        return paidOn;
+    }
+
+    public void setPaidOn(LocalDateTime paidOn) {
+        this.paidOn = paidOn;
     }
 }

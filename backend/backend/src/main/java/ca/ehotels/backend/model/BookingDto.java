@@ -2,6 +2,7 @@ package ca.ehotels.backend.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class BookingDto {
     private Integer bookingId;
@@ -14,6 +15,9 @@ public class BookingDto {
     private String hotelNameSnapshot;
     private String areaSnapshot;
     private BigDecimal roomPriceSnapshot;
+    private LocalDateTime checkInTime;
+    private LocalDateTime checkOutTime;
+    private LocalDateTime createdAt;
 
     public Integer getBookingId() {
         return bookingId;
@@ -93,5 +97,29 @@ public class BookingDto {
 
     public void setRoomPriceSnapshot(BigDecimal roomPriceSnapshot) {
         this.roomPriceSnapshot = roomPriceSnapshot;
+    }
+
+    public LocalDateTime getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
+    public LocalDateTime getCheckOutTime() {
+        return checkOutTime;
+    }
+
+    public void setCheckOutTime(LocalDateTime checkOutTime) {
+        this.checkOutTime = checkOutTime;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }
