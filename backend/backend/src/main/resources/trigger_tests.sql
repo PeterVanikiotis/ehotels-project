@@ -272,3 +272,51 @@ VALUES (
            'ByWard Market',
            215
        );
+
+
+
+-- =========================================================
+-- TEST 8: VALID RENTAL (SHOULD SUCCEED)
+-- Everything matches Booking #7 exactly.
+-- =========================================================
+INSERT INTO renting (
+    ssn, hotel_id, room_number, booking_id, driving_license_number,
+    start_datetime, end_datetime, customer_name_snapshot,
+    hotel_name_snapshot, area_snapshot, room_price_snapshot
+) VALUES (
+             '900000026', 7, 102, 7, 'DL00007ON',
+             '2026-04-16 15:00:00', '2026-04-18 11:00:00',
+             'Isabella Martin', 'Maple Burnaby Hotel', 'Burnaby', 215
+         );
+
+
+-- =========================================================
+-- TEST 9: WRONG ROOM (SHOULD FAIL)
+-- Points to Booking #7, but tries to rent Room 105 instead of 102.
+-- EXPECTED ERROR: "Renting details... do not match the associated Booking #7"
+-- =========================================================
+INSERT INTO renting (
+    ssn, hotel_id, room_number, booking_id, driving_license_number,
+    start_datetime, end_datetime, customer_name_snapshot,
+    hotel_name_snapshot, area_snapshot, room_price_snapshot
+) VALUES (
+             '900000026', 7, 105, 7, 'DL00007ON',
+             '2026-04-16 15:00:00', '2026-04-18 11:00:00',
+             'Isabella Martin', 'Maple Burnaby Hotel', 'Burnaby', 215
+         );
+
+
+-- =========================================================
+-- TEST 10: WRONG CUSTOMER (SHOULD FAIL)
+-- Points to Booking #7, but tries to rent it to Customer 'DL00025ON'.
+-- EXPECTED ERROR: "Renting details... do not match the associated Booking #7"
+-- =========================================================
+INSERT INTO renting (
+    ssn, hotel_id, room_number, booking_id, driving_license_number,
+    start_datetime, end_datetime, customer_name_snapshot,
+    hotel_name_snapshot, area_snapshot, room_price_snapshot
+) VALUES (
+             '900000026', 7, 102, 7, 'DL00025ON',
+             '2026-04-16 15:00:00', '2026-04-18 11:00:00',
+             'Zoe Edwards', 'Maple Burnaby Hotel', 'Burnaby', 215
+         );
