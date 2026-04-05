@@ -37,7 +37,7 @@ public class CustomerController {
     }
 
     @GetMapping("/search-rooms")
-    public List<AvailableRoomDto> searchRooms(
+    public ResponseEntity<?> searchRooms(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Integer capacity,
@@ -48,19 +48,13 @@ public class CustomerController {
             @RequestParam(required = false) Double maxPrice
     ) {
         if (!endDate.isAfter(startDate)) {
-            throw new IllegalArgumentException("End date must be after start date.");
+            return ResponseEntity.badRequest().body("End date must be after start date.");
         }
 
-        return customerSearchRepository.searchAvailableRooms(
-                startDate,
-                endDate,
-                capacity,
-                area,
-                hotelId,
-                rating,
-                minTotalRooms,
-                maxPrice
+        List<AvailableRoomDto> rooms = customerSearchRepository.searchAvailableRooms(
+                startDate, endDate, capacity, area, hotelId, rating, minTotalRooms, maxPrice
         );
+        return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/hotels-with-capacity")
@@ -71,15 +65,16 @@ public class CustomerController {
     }
 
     @GetMapping("/available-rooms-per-area")
-    public List<AvailableRoomsPerAreaDto> getAvailableRoomsPerArea(
+    public ResponseEntity<?> getAvailableRoomsPerArea(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         if (!endDate.isAfter(startDate)) {
-            throw new IllegalArgumentException("End date must be after start date.");
+            return ResponseEntity.badRequest().body("End date must be after start date.");
         }
 
-        return customerSearchRepository.getAvailableRoomsPerArea(startDate, endDate);
+        List<AvailableRoomsPerAreaDto> results = customerSearchRepository.getAvailableRoomsPerArea(startDate, endDate);
+        return ResponseEntity.ok(results);
     }
 
     @GetMapping("/areas")
