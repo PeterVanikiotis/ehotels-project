@@ -664,6 +664,22 @@
             return;
         }
 
+        //Date Logic: Create Date objects to compare
+        const start = new Date(startDate.value);
+        const end = new Date(endDate.value);
+
+        //Handle case where use picks a end date that is earlier than start date
+        if (end <= start) {
+            // This triggers the "Popup Window"
+            alert("Invalid Dates: The Checkout date must be after the Checkin date.");
+
+            //Also show the red error bar for UI consistency
+            showMessage("End date must be after start date.", "error");
+            resultsTable.style.display = "none";
+            return; // Stop the function here
+        }
+
+
         const params = new URLSearchParams();
         params.append("startDate", startDate.value);
         params.append("endDate", endDate.value);
