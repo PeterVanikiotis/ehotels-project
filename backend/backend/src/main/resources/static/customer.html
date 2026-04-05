@@ -3,44 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Customer - Search for a Room</title>
-
     <style>
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             padding: 40px;
             margin: 0;
-        }
-
-        .container {
-            width: 320px;
-            background: white;
-            padding: 20px 24px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            margin-left: 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-top: 0;
-            margin-bottom: 18px;
-        }
-
-        h3 {
-            font-size: 16px;
-            margin-bottom: 12px;
-        }
-
-        .chain-item {
-            padding: 6px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        label {
-            font-size: 14px;
         }
 
         .top-link {
@@ -50,59 +18,863 @@
             color: #1f4e79;
             font-size: 14px;
         }
-    </style>
 
+        .container {
+            max-width: 1150px;
+            background: white;
+            padding: 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 22px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input, select, button {
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #1f4e79;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: #163a5a;
+        }
+
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
+        .chain-box {
+            grid-column: 1 / -1;
+        }
+
+        .chain-list {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(200px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chain-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message {
+            margin: 14px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .info { background: #eef4ff; color: #1f4e79; }
+        .success { background: #edf9f0; color: #1f6b3b; }
+        .error { background: #fdeeee; color: #a33a3a; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        th {
+            background: #eef3f8;
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .close-button {
+            position: absolute;
+            right: 18px;
+            top: 14px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-details p {
+            margin: 8px 0;
+        }
+    </style>
 </head>
+
 <body>
 
 <a class="top-link" href="/index.html">← Back to home</a>
 
 <div class="container">
-    <h1>Search for a room</h1>
-    <h3>Select hotel chains</h3>
 
-    <div id="hotelChainList">
-        Loading hotel chains...
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0;">Search for available rooms</h1>
+        <button id="openEditCustomerModalButton">Edit Profile</button>
+    </div>
+
+    <div class="form-grid">
+        <div class="field">
+            <label for="startDate">Start date</label>
+            <input type="date" id="startDate">
+        </div>
+
+        <div class="field">
+            <label for="endDate">End date</label>
+            <input type="date" id="endDate">
+        </div>
+
+        <div class="field">
+            <label for="capacity">Minimum room capacity</label>
+            <input type="number" id="capacity" min="1">
+        </div>
+
+        <div class="field">
+            <label for="area">Area</label>
+            <select id="area">
+                <option value="">Any area</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="rating">Rating</label>
+            <select id="rating">
+                <option value="">Any</option>
+                <option value="1">1-star</option>
+                <option value="2">2-star</option>
+                <option value="3">3-star</option>
+                <option value="4">4-star</option>
+                <option value="5">5-star</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="minTotalRooms">Minimum total rooms</label>
+            <input type="number" id="minTotalRooms" min="1">
+        </div>
+
+        <div class="field">
+            <label for="maxPrice">Maximum room price</label>
+            <input type="number" id="maxPrice" min="1" step="0.01">
+        </div>
+
+        <div class="field">
+            <label for="hotel">Hotel</label>
+            <select id="hotel">
+                <option value="">Any hotel</option>
+            </select>
+        </div>
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top: 10px;">
+        <button id="searchButton" type="button">Search rooms</button>
+        <button id="openCreateCustomerModalButton" type="button">Become a customer</button>
+    </div>
+
+    <div id="message" class="message"></div>
+    <div id="capacitySummary" class="message info" style="display:none;"></div>
+    <div id="areaAvailabilitySummary" class="message info" style="display:none;"></div>
+
+    <table id="resultsTable" style="display:none;">
+        <thead>
+        <tr>
+            <th>Chain</th>
+            <th>Hotel</th>
+            <th>Area</th>
+            <th>Rating</th>
+            <th>Total Rooms</th>
+            <th>Room #</th>
+            <th>Capacity</th>
+            <th>View</th>
+            <th>Price</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+    </table>
+</div>
+
+<div id="bookingModal" class="modal">
+    <div class="modal-content">
+        <span id="closeModal" class="close-button">&times;</span>
+        <h2>Book Room</h2>
+
+        <div id="modalRoomDetails" class="modal-details"></div>
+
+        <div class="field" style="margin-top: 18px;">
+            <label for="licenseNumber">Customer driving license number</label>
+            <input type="text" id="licenseNumber" placeholder="Enter driving license number">
+        </div>
+
+        <button id="confirmBookingButton" type="button" style="margin-top: 16px;">Confirm Booking</button>
+    </div>
+</div>
+<div id="successModal" class="modal">
+    <div class="modal-content">
+        <span id="closeSuccessModal" class="close-button">&times;</span>
+        <h2>Booking Confirmed 🎉</h2>
+
+        <div id="successMessage" class="modal-details"></div>
+
+        <button id="closeSuccessButton" style="margin-top: 16px;">OK</button>
+    </div>
+</div>
+
+<div id="createCustomerModal" class="modal">
+    <div class="modal-content">
+        <span id="closeCreateCustomerModal" class="close-button">&times;</span>
+        <h2>Become a customer</h2>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerLicense">Driving license number</label>
+            <input type="text" id="newCustomerLicense" placeholder="Enter driving license number">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerFirstName">First name</label>
+            <input type="text" id="newCustomerFirstName" placeholder="Enter first name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerLastName">Last name</label>
+            <input type="text" id="newCustomerLastName" placeholder="Enter last name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerStreetName">Street name</label>
+            <input type="text" id="newCustomerStreetName" placeholder="Enter street name">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerStreetNumber">Street number</label>
+            <input type="text" id="newCustomerStreetNumber" placeholder="Enter street number">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerPostalCode">Postal code</label>
+            <input type="text" id="newCustomerPostalCode" placeholder="Enter postal code">
+        </div>
+
+        <div class="field" style="margin-top: 12px;">
+            <label for="newCustomerPhone">Phone number</label>
+            <input type="text" id="newCustomerPhone" placeholder="Enter phone number">
+        </div>
+
+        <button id="confirmCreateCustomerButton" type="button" style="margin-top: 16px;">
+            Create customer
+        </button>
+    </div>
+</div>
+
+<div id="editCustomerModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEditCustomerModal" class="close-button">&times;</span>
+        <h2>Edit Customer Profile</h2>
+
+        <div class="field">
+            <label>Driving License Number</label>
+            <input type="text" id="editLicenseInput">
+        </div>
+
+        <button id="loadCustomerButton" style="margin-top:10px;">Load Info</button>
+
+        <div id="editCustomerForm" style="display:none; margin-top:15px;">
+
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" id="editFirstName">
+            </div>
+
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" id="editLastName">
+            </div>
+
+            <div class="field">
+                <label>Street Name</label>
+                <input type="text" id="editStreetName">
+            </div>
+
+            <div class="field">
+                <label>Street Number</label>
+                <input type="text" id="editStreetNumber">
+            </div>
+
+            <div class="field">
+                <label>Postal Code</label>
+                <input type="text" id="editPostalCode">
+            </div>
+
+            <button id="updateCustomerButton" style="margin-top:15px;">
+                Update Info
+            </button>
+        </div>
     </div>
 </div>
 
 <script>
-    async function loadHotelChains() {
-        const container = document.getElementById("hotelChainList");
+    const STORAGE_KEY = "customerForm";
+    let selectedRoom = null;
+
+    const startDate = document.getElementById("startDate");
+    const endDate = document.getElementById("endDate");
+    const capacity = document.getElementById("capacity");
+    const area = document.getElementById("area");
+    const rating = document.getElementById("rating");
+    const minTotalRooms = document.getElementById("minTotalRooms");
+    const maxPrice = document.getElementById("maxPrice");
+    const hotel = document.getElementById("hotel");
+    const capacitySummary = document.getElementById("capacitySummary");
+    const areaAvailabilitySummary = document.getElementById("areaAvailabilitySummary");
+    const searchButton = document.getElementById("searchButton");
+    const message = document.getElementById("message");
+    const resultsTable = document.getElementById("resultsTable");
+    const resultsBody = document.getElementById("resultsBody");
+
+    function openCreateCustomerModal() {
+        document.getElementById("createCustomerModal").style.display = "flex";
+    }
+
+    function closeCreateCustomerModal() {
+        document.getElementById("createCustomerModal").style.display = "none";
+    }
+
+    // open/close modal
+    document.getElementById("openEditCustomerModalButton").addEventListener("click", () => {
+        document.getElementById("editCustomerModal").style.display = "flex";
+    });
+
+    document.getElementById("closeEditCustomerModal").addEventListener("click", () => {
+        document.getElementById("editCustomerModal").style.display = "none";
+    });
+
+    // load customer info
+    document.getElementById("loadCustomerButton").addEventListener("click", async () => {
+        const license = document.getElementById("editLicenseInput").value.trim();
+
+        if (!license) {
+            showMessage("Enter a license number", "error");
+            return;
+        }
 
         try {
-            const response = await fetch("/hotel-chains");
-            const chains = await response.json();
+            const res = await fetch(`/api/customer/get?license=${encodeURIComponent(license)}`);
+            const data = await res.json();
 
-            container.innerHTML = "";
+            document.getElementById("editFirstName").value = data.firstName;
+            document.getElementById("editLastName").value = data.lastName;
+            document.getElementById("editStreetName").value = data.streetName;
+            document.getElementById("editStreetNumber").value = data.streetNumber;
+            document.getElementById("editPostalCode").value = data.postalCode;
 
-            chains.forEach(chain => {
-                const div = document.createElement("div");
-                div.className = "chain-item";
+            document.getElementById("editCustomerForm").style.display = "block";
 
-                const checkbox = document.createElement("input");
-                checkbox.type = "checkbox";
-                checkbox.value = chain.centralOfficeId;
-                checkbox.id = "chain-" + chain.centralOfficeId;
-                checkbox.name = "hotelChains";
+        } catch (err) {
+            showMessage("Customer not found", "error");
+        }
+    });
 
-                const label = document.createElement("label");
-                label.htmlFor = checkbox.id;
-                label.innerText = chain.chainName;
+    // update customer
+    document.getElementById("updateCustomerButton").addEventListener("click", async () => {
+        const license = document.getElementById("editLicenseInput").value.trim();
 
-                div.appendChild(checkbox);
-                div.appendChild(label);
-
-                container.appendChild(div);
+        try {
+            const res = await fetch("/api/customer/update", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    drivingLicenseNumber: license,
+                    firstName: document.getElementById("editFirstName").value,
+                    lastName: document.getElementById("editLastName").value,
+                    streetName: document.getElementById("editStreetName").value,
+                    streetNumber: document.getElementById("editStreetNumber").value,
+                    postalCode: document.getElementById("editPostalCode").value
+                })
             });
 
+            const text = await res.text();
+
+            if (!res.ok) throw new Error(text);
+
+            showMessage("Customer updated successfully", "success");
+
+        } catch (err) {
+            showMessage(err.message, "error");
+        }
+    });
+
+    document.getElementById("openCreateCustomerModalButton").addEventListener("click", openCreateCustomerModal);
+    document.getElementById("closeCreateCustomerModal").addEventListener("click", closeCreateCustomerModal);
+
+    document.getElementById("confirmCreateCustomerButton").addEventListener("click", async () => {
+        const drivingLicenseNumber = document.getElementById("newCustomerLicense").value.trim();
+        const firstName = document.getElementById("newCustomerFirstName").value.trim();
+        const lastName = document.getElementById("newCustomerLastName").value.trim();
+        const streetName = document.getElementById("newCustomerStreetName").value.trim();
+        const streetNumber = document.getElementById("newCustomerStreetNumber").value.trim();
+        const postalCode = document.getElementById("newCustomerPostalCode").value.trim();
+        const phoneNumber = document.getElementById("newCustomerPhone").value.trim();
+
+        if (!drivingLicenseNumber || !firstName || !lastName || !streetName || !streetNumber || !postalCode || !phoneNumber) {
+            showMessage("Please fill in all customer fields.", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/customer/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    drivingLicenseNumber,
+                    firstName,
+                    lastName,
+                    streetName,
+                    streetNumber,
+                    postalCode,
+                    phoneNumber
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Customer creation failed.");
+            }
+
+            showMessage("Customer created successfully.", "success", true);
+
+            const bookingLicenseInput = document.getElementById("licenseNumber");
+            if (bookingLicenseInput) {
+                bookingLicenseInput.value = drivingLicenseNumber;
+            }
+
+            closeCreateCustomerModal();
         } catch (error) {
-            container.innerHTML = "Failed to load hotel chains.";
-            console.error(error);
+            showMessage(error.message || "Customer creation failed.", "error");
+        }
+    });
+
+    window.addEventListener("click", (event) => {
+        if (event.target === document.getElementById("createCustomerModal")) {
+            closeCreateCustomerModal();
+        }
+    });
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr + "T00:00:00");
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric"
+        });
+    }
+
+    function showMessage(text, type = "info", autoHide = false) {
+        message.innerText = text;
+        message.className = "message " + type;
+        message.style.display = "block";
+
+        if (autoHide) {
+            setTimeout(() => {
+                message.style.display = "none";
+            }, 2500);
         }
     }
 
-    window.onload = loadHotelChains;
+    function saveForm() {
+        const data = {
+            startDate: startDate.value,
+            endDate: endDate.value,
+            capacity: capacity.value,
+            area: area.value,
+            hotelId: hotel.value,
+            rating: rating.value,
+            minTotalRooms: minTotalRooms.value,
+            maxPrice: maxPrice.value
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadForm() {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        startDate.value = data.startDate || "";
+        endDate.value = data.endDate || "";
+        capacity.value = data.capacity || "";
+        rating.value = data.rating || "";
+        minTotalRooms.value = data.minTotalRooms || "";
+        maxPrice.value = data.maxPrice || "";
+        return data;
+    }
+
+    async function loadHotels() {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+        let url = "/api/customer/hotels-with-capacity";
+        if (area.value) {
+            url += `?area=${encodeURIComponent(area.value)}`;
+        }
+
+        const response = await fetch(url);
+        const hotels = await response.json();
+
+        hotel.innerHTML = '<option value="">Any hotel</option>';
+
+        hotels.forEach(h => {
+            const option = document.createElement("option");
+            option.value = h.hotelId;
+            option.textContent = `${h.hotelName} (${h.chainName}) - Capacity: ${h.totalCapacity}`;
+            option.dataset.capacity = h.totalCapacity;
+            option.dataset.hotelName = h.hotelName;
+            hotel.appendChild(option);
+        });
+
+        if (saved.hotelId) {
+            hotel.value = saved.hotelId;
+        }
+    }
+
+    async function loadAreas() {
+        const saved = loadForm();
+        const response = await fetch("/api/customer/areas");
+        const areas = await response.json();
+
+        area.innerHTML = '<option value="">Any area</option>';
+
+        areas.forEach(a => {
+            const option = document.createElement("option");
+            option.value = a;
+            option.textContent = a;
+            area.appendChild(option);
+        });
+
+        if (saved.area) {
+            area.value = saved.area;
+        }
+    }
+
+    async function loadAvailableRoomsPerArea(startDateValue, endDateValue) {
+        const response = await fetch(
+            `/api/customer/available-rooms-per-area?startDate=${encodeURIComponent(startDateValue)}&endDate=${encodeURIComponent(endDateValue)}`
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || "Failed to load available rooms per area.");
+        }
+
+        return await response.json();
+    }
+
+    function yesNo(value) {
+        return value ? "Yes" : "No";
+    }
+
+    function openBookingModal(room) {
+        selectedRoom = room;
+
+        document.getElementById("modalRoomDetails").innerHTML = `
+            <p><strong>Hotel:</strong> ${room.hotelName}</p>
+            <p><strong>Chain:</strong> ${room.chainName}</p>
+            <p><strong>Area:</strong> ${room.area}</p>
+            <p><strong>Rating:</strong> ${room.rating}</p>
+            <p><strong>Address:</strong> ${room.streetNumber} ${room.streetName}, ${room.city}, ${room.provinceState}, ${room.country}, ${room.postalCode}</p>
+            <p><strong>Room Number:</strong> ${room.roomNumber}</p>
+            <p><strong>Capacity:</strong> ${room.roomCapacity}</p>
+            <p><strong>View:</strong> ${room.roomViewType}</p>
+            <p><strong>Price:</strong> $${room.price}</p>
+            <p><strong>TV:</strong> ${yesNo(room.hasTv)}</p>
+            <p><strong>Air Conditioner:</strong> ${yesNo(room.hasAirConditioner)}</p>
+            <p><strong>Fridge:</strong> ${yesNo(room.hasFridge)}</p>
+            <p><strong>Can be extended:</strong> ${yesNo(room.roomExtendedStatus)}</p>
+        `;
+
+        document.getElementById("bookingModal").style.display = "flex";
+    }
+
+    function closeBookingModal() {
+        document.getElementById("bookingModal").style.display = "none";
+        document.getElementById("licenseNumber").value = "";
+        selectedRoom = null;
+    }
+
+    async function searchRooms() {
+        saveForm();
+
+        if (!startDate.value || !endDate.value) {
+            showMessage("Please enter both a start date and an end date.", "error");
+            resultsTable.style.display = "none";
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append("startDate", startDate.value);
+        params.append("endDate", endDate.value);
+
+        if (capacity.value) params.append("capacity", capacity.value);
+        if (area.value) params.append("area", area.value);
+        if (rating.value) params.append("rating", rating.value);
+        if (minTotalRooms.value) params.append("minTotalRooms", minTotalRooms.value);
+        if (maxPrice.value) params.append("maxPrice", maxPrice.value);
+
+        if (hotel.value) params.append("hotelId", hotel.value);
+
+        searchButton.disabled = true;
+        searchButton.innerText = "Searching...";
+        showMessage("Searching...", "info");
+
+        try {
+            const [roomsResponse, areaAvailability] = await Promise.all([
+                fetch(`/api/customer/search-rooms?${params.toString()}`),
+                loadAvailableRoomsPerArea(startDate.value, endDate.value)
+            ]);
+
+            if (!roomsResponse.ok) {
+                const errorText = await roomsResponse.text();
+                throw new Error(errorText || "Search request failed.");
+            }
+
+            const rooms = await roomsResponse.json();
+            resultsBody.innerHTML = "";
+
+            if (rooms.length === 0) {
+                showMessage("No available rooms matched your criteria.", "info");
+                resultsTable.style.display = "none";
+                capacitySummary.style.display = "none";
+                capacitySummary.innerText = "";
+
+                if (areaAvailability.length > 0) {
+                    areaAvailabilitySummary.innerHTML = `
+            <strong>Available rooms by area for selected dates:</strong><br>
+            ${areaAvailability.map(item => `${item.area}: ${item.availableRooms}`).join("<br>")}
+        `;
+                    areaAvailabilitySummary.style.display = "block";
+                } else {
+                    areaAvailabilitySummary.style.display = "none";
+                    areaAvailabilitySummary.innerHTML = "";
+                }
+
+                return;
+            }
+
+            showMessage(`${rooms.length} available room(s) found.`, "success");
+            resultsTable.style.display = "table";
+
+            if (hotel.value && hotel.selectedIndex >= 0) {
+                const selectedOption = hotel.options[hotel.selectedIndex];
+                const selectedHotelName = selectedOption?.dataset?.hotelName || selectedOption?.textContent || "Selected hotel";
+                const selectedCapacity = selectedOption?.dataset?.capacity || "N/A";
+
+                capacitySummary.innerText = `Total capacity for ${selectedHotelName}: ${selectedCapacity}`;
+                capacitySummary.style.display = "block";
+            } else {
+                capacitySummary.style.display = "none";
+                capacitySummary.innerText = "";
+            }
+
+            if (areaAvailability.length > 0) {
+                areaAvailabilitySummary.innerHTML = `
+        <strong>Available rooms by area for selected dates:</strong><br>
+        ${areaAvailability.map(item => `${item.area}: ${item.availableRooms}`).join("<br>")}
+    `;
+                areaAvailabilitySummary.style.display = "block";
+            } else {
+                areaAvailabilitySummary.style.display = "none";
+                areaAvailabilitySummary.innerHTML = "";
+            }
+
+            rooms.forEach(room => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${room.chainName}</td>
+                    <td>${room.hotelName}</td>
+                    <td>${room.area}</td>
+                    <td>${room.rating}</td>
+                    <td>${room.totalRooms}</td>
+                    <td>${room.roomNumber}</td>
+                    <td>${room.roomCapacity}</td>
+                    <td>${room.roomViewType}</td>
+                    <td>$${room.price}</td>
+                `;
+
+                const actionCell = document.createElement("td");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = "Book";
+                button.addEventListener("click", () => openBookingModal(room));
+                actionCell.appendChild(button);
+                row.appendChild(actionCell);
+
+                resultsBody.appendChild(row);
+            });
+
+        } catch (error) {
+            console.error(error);
+            showMessage(error.message || "Failed to search rooms.", "error", true);
+            resultsTable.style.display = "none";
+            capacitySummary.style.display = "none";
+            capacitySummary.innerText = "";
+            areaAvailabilitySummary.style.display = "none";
+            areaAvailabilitySummary.innerHTML = "";
+        } finally {
+            searchButton.disabled = false;
+            searchButton.innerText = "Search rooms";
+        }
+    }
+
+    document.getElementById("confirmBookingButton").addEventListener("click", async () => {
+        if (!selectedRoom) return;
+
+        const drivingLicenseNumber = document.getElementById("licenseNumber").value.trim();
+
+        if (!drivingLicenseNumber) {
+            showMessage("Please enter a driving license number.", "error");
+            return;
+        }
+
+        try {
+            const response = await fetch("/api/customer/book", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    drivingLicenseNumber: drivingLicenseNumber,
+                    hotelId: selectedRoom.hotelId,
+                    roomNumber: selectedRoom.roomNumber,
+                    startDate: startDate.value,
+                    endDate: endDate.value
+                })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Booking failed.");
+            }
+
+            const prettyStart = formatDate(startDate.value);
+            const prettyEnd = formatDate(endDate.value);
+
+            document.getElementById("successMessage").innerHTML = `
+                <p><strong>${selectedRoom.hotelName}</strong> (Room ${selectedRoom.roomNumber})</p>
+                <p>Check-in: ${prettyStart} at 3:00 PM</p>
+                <p>Check-out: ${prettyEnd} at 11:00 AM</p>
+                <p style="margin-top:10px;">Payment can be completed upon arrival.</p>
+            `;
+
+            document.getElementById("successModal").style.display = "flex";
+
+            closeBookingModal();
+            await searchRooms();
+
+        } catch (error) {
+            console.error(error);
+            showMessage(error.message || "Booking failed.", "error");
+        }
+    });
+
+    document.getElementById("closeModal").addEventListener("click", closeBookingModal);
+
+    window.addEventListener("click", (event) => {
+        if (event.target === document.getElementById("bookingModal")) {
+            closeBookingModal();
+        }
+    });
+
+    [
+        startDate, endDate, capacity, area, hotel, rating, minTotalRooms, maxPrice
+    ].forEach(el => {
+        el.addEventListener("input", saveForm);
+        el.addEventListener("change", saveForm);
+    });
+
+    area.addEventListener("change", async () => {
+        await loadHotels();
+        hotel.value = "";
+        saveForm();
+    });
+
+    startDate.addEventListener("change", () => {
+        endDate.min = startDate.value;
+        saveForm();
+    });
+
+    searchButton.addEventListener("click", searchRooms);
+
+    window.onload = async () => {
+        const todayStr = new Date().toISOString().split("T")[0];
+        startDate.min = todayStr;
+        endDate.min = todayStr;
+
+        loadForm();
+        await loadAreas();
+        await loadHotels();
+    };
+    function closeSuccessModal() {
+        document.getElementById("successModal").style.display = "none";
+    }
+
+    document.getElementById("closeSuccessModal").addEventListener("click", closeSuccessModal);
+    document.getElementById("closeSuccessButton").addEventListener("click", closeSuccessModal);
 </script>
 
 </body>
