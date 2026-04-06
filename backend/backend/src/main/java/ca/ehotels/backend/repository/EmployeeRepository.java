@@ -546,7 +546,10 @@ public class EmployeeRepository {
     //Used in Manager Interface to insert or update an employee
     @Transactional
     public void saveOrUpdateEmployee(EmployeeDto emp, Integer hotelId) {
-        // 1. Insert or Update the base Employee table
+        // 1. Bulletproof fix for the 'Staff' role error
+        jdbcTemplate.update("INSERT INTO role (role_name) VALUES ('Staff') ON CONFLICT DO NOTHING", new MapSqlParameterSource());
+
+        // 2. Upsert the Employee (matches your schema columns)
         String employeeSql = """
         INSERT INTO employee (ssn, first_name, middle_name, last_name, street_name, street_number, postal_code)
         VALUES (:ssn, :firstName, :middleName, :lastName, :streetName, :streetNumber, :postalCode)
@@ -571,8 +574,7 @@ public class EmployeeRepository {
 
         jdbcTemplate.update(employeeSql, params);
 
-        // 2. Ensure they are linked to this hotel in the 'works_as' table
-        // We'll assume a default role of 'Staff' for new adds
+        // 3. Link to hotel in 'works_as' table
         String worksAsSql = """
         INSERT INTO works_as (ssn, role_name, hotel_id)
         VALUES (:ssn, 'Staff', :hotelId)
@@ -580,5 +582,4 @@ public class EmployeeRepository {
     """;
         jdbcTemplate.update(worksAsSql, params);
     }
-
 }

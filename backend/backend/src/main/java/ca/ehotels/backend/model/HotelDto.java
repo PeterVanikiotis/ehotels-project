@@ -1,5 +1,7 @@
 package ca.ehotels.backend.model;
 
+import java.util.List;
+
 public class HotelDto {
     private Integer hotelId;
     private String hotelName;
@@ -12,6 +14,8 @@ public class HotelDto {
     private String country;
     private Integer numberOfRooms;
     private Integer rating;
+    private List<String> emailAddresses;
+    private List<String> phoneNumbers;
 
     // Getters and Setters
     public Integer getHotelId() { return hotelId; }
@@ -36,4 +40,8 @@ public class HotelDto {
     public void setNumberOfRooms(Integer numberOfRooms) { this.numberOfRooms = numberOfRooms; }
     public Integer getRating() { return rating; }
     public void setRating(Integer rating) { this.rating = rating; }
+    public List<String> getEmailAddresses() { return emailAddresses; }
+    public void setEmailAddresses(List<String> emails) { this.emailAddresses = emails; }
+    public List<String> getPhoneNumbers() { return phoneNumbers; }
+    public void setPhoneNumbers(List<String> phones) { this.phoneNumbers = phones; }
 }

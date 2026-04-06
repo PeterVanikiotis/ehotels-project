@@ -28,14 +28,17 @@ public class ManagerController {
     @GetMapping("/login")
     public ResponseEntity<?> login(@RequestParam String ssn) {
         HotelDto hotel = managerRepository.getManagedHotel(ssn);
-        if (hotel == null) return ResponseEntity.status(403).body("Access Denied: You are not a registered Manager.");
+        if (hotel == null) return ResponseEntity.status(403).body("Unauthorized Manager SSN.");
         return ResponseEntity.ok(hotel);
     }
 
     @PostMapping("/hotel/update")
     public ResponseEntity<String> updateHotel(@RequestBody HotelDto hotel) {
+        if (hotel.getRating() == null || hotel.getRating() < 1 || hotel.getRating() > 5) {
+            return ResponseEntity.badRequest().body("Rating must be between 1 and 5.");
+        }
         hotelRepository.updateHotel(hotel);
-        return ResponseEntity.ok("Hotel information updated.");
+        return ResponseEntity.ok("Success");
     }
 
     @GetMapping("/employees")
@@ -43,13 +46,34 @@ public class ManagerController {
         return employeeRepository.getEmployeesByHotel(hotelId);
     }
 
+    @PostMapping("/employee/save")
+    public ResponseEntity<String> saveEmployee(@RequestBody EmployeeDto emp, @RequestParam Integer hotelId) {
+        try {
+            employeeRepository.saveOrUpdateEmployee(emp, hotelId);
+            return ResponseEntity.ok("Saved");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/employee/delete")
+    public ResponseEntity<String> deleteEmployee(@RequestParam String targetSsn) {
+        employeeRepository.deleteEmployee(targetSsn);
+        return ResponseEntity.ok("Employee removed.");
+    }
+
+    @GetMapping("/customers")
+    public List<CustomerDto> getCustomers() {
+        return customerRepository.getAllCustomers();
+    }
+
     @DeleteMapping("/customer/delete")
     public ResponseEntity<String> deleteCustomer(@RequestParam String license) {
         try {
             customerRepository.deleteCustomer(license);
-            return ResponseEntity.ok("Customer profile permanently removed.");
+            return ResponseEntity.ok("Customer removed.");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Cannot delete customer: They have active bookings/rentings.");
+            return ResponseEntity.badRequest().body("Cannot delete: Customer has active bookings.");
         }
     }
 }
