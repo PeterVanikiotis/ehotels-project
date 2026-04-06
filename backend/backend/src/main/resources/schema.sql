@@ -346,7 +346,7 @@ CREATE TABLE IF NOT EXISTS renting (
     CONSTRAINT fk_renting_booking
     FOREIGN KEY (booking_id)
     REFERENCES booking(booking_id)
-    ON DELETE RESTRICT,
+    ON DELETE SET NULL,
 
     -- Customer must exist
     CONSTRAINT fk_renting_customer
