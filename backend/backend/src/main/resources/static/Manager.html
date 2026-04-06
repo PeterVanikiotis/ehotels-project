@@ -287,6 +287,16 @@
 
     // Explicit Event Attachment
     document.getElementById('saveEmployeeBtn').addEventListener('click', saveEmployee);
+
+
+    /// This runs every 5 seconds (5000 milliseconds) --> Refreshes employee and customer list
+    setInterval(() => {
+        if (activeHotel) {
+            console.log("Auto-refreshing lists...");
+            loadEmployees();
+            loadCustomers();
+        }
+    }, 5000);
 </script>
 </body>
 </html>
