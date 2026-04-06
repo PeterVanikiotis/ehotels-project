@@ -58,8 +58,13 @@ public class ManagerController {
 
     @DeleteMapping("/employee/delete")
     public ResponseEntity<String> deleteEmployee(@RequestParam String targetSsn) {
-        employeeRepository.deleteEmployee(targetSsn);
-        return ResponseEntity.ok("Employee removed.");
+        try {
+            employeeRepository.deleteEmployee(targetSsn);
+            return ResponseEntity.ok("Employee removed successfully.");
+        } catch (Exception e) {
+            // This catches the 'fk_hotel_manager' constraint violation
+            return ResponseEntity.badRequest().body("Error: This employee is currently assigned as a Hotel Manager. Reassign the manager role before deleting.");
+        }
     }
 
     @GetMapping("/customers")

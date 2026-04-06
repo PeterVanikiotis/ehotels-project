@@ -518,8 +518,10 @@ public class EmployeeRepository {
 
     //Used in Manager interface to see list of employees at a hotel
     public List<EmployeeDto> getEmployeesByHotel(Integer hotelId) {
+        // Fetches employee details AND their specific role at this hotel
         String sql = """
-        SELECT e.* FROM employee e
+        SELECT e.*, w.role_name 
+        FROM employee e
         JOIN works_as w ON e.ssn = w.ssn
         WHERE w.hotel_id = :hotelId
     """;
@@ -528,9 +530,10 @@ public class EmployeeRepository {
             e.setSsn(rs.getString("ssn"));
             e.setFirstName(rs.getString("first_name"));
             e.setLastName(rs.getString("last_name"));
-            e.setStreetName(rs.getString("street_name"));
             e.setStreetNumber(rs.getString("street_number"));
+            e.setStreetName(rs.getString("street_name"));
             e.setPostalCode(rs.getString("postal_code"));
+            e.setRole(rs.getString("role_name")); // This fills the "Role" column in your table
             return e;
         });
     }
@@ -538,6 +541,8 @@ public class EmployeeRepository {
 
     //Used in manager interface to delete employees
     public void deleteEmployee(String ssn) {
+        // This will remove the employee from 'employee', 'works_as', and 'manager' tables due to CASCADE
+        // But it will FAIL if the employee is the manager of a hotel (RESTRICT constraint)
         jdbcTemplate.update("DELETE FROM employee WHERE ssn = :ssn", new MapSqlParameterSource("ssn", ssn));
     }
 
@@ -546,16 +551,12 @@ public class EmployeeRepository {
     //Used in Manager Interface to insert or update an employee
     @Transactional
     public void saveOrUpdateEmployee(EmployeeDto emp, Integer hotelId) {
-        // 1. Bulletproof fix for the 'Staff' role error
-        jdbcTemplate.update("INSERT INTO role (role_name) VALUES ('Staff') ON CONFLICT DO NOTHING", new MapSqlParameterSource());
-
-        // 2. Upsert the Employee (matches your schema columns)
+        // 1. Upsert the base Employee record
         String employeeSql = """
         INSERT INTO employee (ssn, first_name, middle_name, last_name, street_name, street_number, postal_code)
         VALUES (:ssn, :firstName, :middleName, :lastName, :streetName, :streetNumber, :postalCode)
         ON CONFLICT (ssn) DO UPDATE SET
             first_name = EXCLUDED.first_name,
-            middle_name = EXCLUDED.middle_name,
             last_name = EXCLUDED.last_name,
             street_name = EXCLUDED.street_name,
             street_number = EXCLUDED.street_number,
@@ -570,16 +571,20 @@ public class EmployeeRepository {
                 .addValue("streetName", emp.getStreetName())
                 .addValue("streetNumber", emp.getStreetNumber())
                 .addValue("postalCode", emp.getPostalCode())
-                .addValue("hotelId", hotelId);
+                .addValue("hotelId", hotelId)
+                .addValue("role", emp.getRole()); // This comes from the dropdown
 
         jdbcTemplate.update(employeeSql, params);
 
-        // 3. Link to hotel in 'works_as' table
-        String worksAsSql = """
-        INSERT INTO works_as (ssn, role_name, hotel_id)
-        VALUES (:ssn, 'Staff', :hotelId)
-        ON CONFLICT (ssn, role_name, hotel_id) DO NOTHING
-    """;
-        jdbcTemplate.update(worksAsSql, params);
+        // 2. Role Logic: Delete the current role assignment for this hotel
+        // (We exclude 'Manager' so we don't accidentally remove a manager's primary status)
+        String deleteOldRole = "DELETE FROM works_as WHERE ssn = :ssn AND hotel_id = :hotelId AND role_name <> 'Manager'";
+        jdbcTemplate.update(deleteOldRole, params);
+
+        // 3. Insert the new role selected by the manager
+        String insertRole = "INSERT INTO works_as (ssn, role_name, hotel_id) VALUES (:ssn, :role, :hotelId)";
+        jdbcTemplate.update(insertRole, params);
     }
+
+
 }
