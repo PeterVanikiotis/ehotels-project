@@ -2,6 +2,7 @@
 -- This script only creates the tables/constraints.
 -- Data reset + inserts live in populate.sql.
 
+--Create Hotel Chain Table
 CREATE TABLE IF NOT EXISTS hotel_chain (
     central_office_id SERIAL PRIMARY KEY,
     chain_name VARCHAR(100) NOT NULL UNIQUE,
@@ -10,6 +11,7 @@ CREATE TABLE IF NOT EXISTS hotel_chain (
     postal_code VARCHAR(20) NOT NULL
     );
 
+--Create Hotel Chain Email Table
 CREATE TABLE IF NOT EXISTS hotel_chain_email (
     central_office_id INT NOT NULL,
     email_address VARCHAR(255) NOT NULL,
@@ -18,10 +20,14 @@ CREATE TABLE IF NOT EXISTS hotel_chain_email (
         FOREIGN KEY (central_office_id)
         REFERENCES hotel_chain(central_office_id)
         ON DELETE CASCADE,
+
+    -- Constraint to ensure that email address must contain @
     CONSTRAINT chk_hotel_chain_email_format
         CHECK (email_address LIKE '%@%')
     );
 
+
+-- Create Hotel Chain Phone Number Table
 CREATE TABLE IF NOT EXISTS hotel_chain_phone (
     central_office_id INT NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
@@ -30,10 +36,13 @@ CREATE TABLE IF NOT EXISTS hotel_chain_phone (
         FOREIGN KEY (central_office_id)
         REFERENCES hotel_chain(central_office_id)
         ON DELETE CASCADE,
+
+    -- Constraint to ensure that phone number length is between 7 and 20 numbers
     CONSTRAINT chk_hotel_chain_phone_length
         CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
+-- Create Employee Table
 CREATE TABLE IF NOT EXISTS employee (
     ssn VARCHAR(20) PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -42,24 +51,31 @@ CREATE TABLE IF NOT EXISTS employee (
     street_name VARCHAR(100) NOT NULL,
     street_number VARCHAR(20) NOT NULL,
     postal_code VARCHAR(20) NOT NULL,
+
     -- Constraint ensures ssn must be 9 digits (numeric)
     Constraint chk_ssn_format CHECK (ssn ~ '^[0-9]{9}$'),
     -- Constraint ensures employee_street_number > 0
     CONSTRAINT chk_employee_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
     );
 
+-- Create Manager Table
 CREATE TABLE IF NOT EXISTS manager (
     ssn VARCHAR(20) PRIMARY KEY,
+
+    -- Ensures that a manager must already exist as an employee
     CONSTRAINT fk_manager_employee
     FOREIGN KEY (ssn)
     REFERENCES employee(ssn)
+    -- If the referenced employee is deleted, delete the corresponding manager record automatically
     ON DELETE CASCADE
     );
 
 CREATE TABLE IF NOT EXISTS role (
+    -- role_name stores the name of a role (e.g., 'Manager', 'Developer')
     role_name VARCHAR(100) PRIMARY KEY
     );
 
+-- Create Hotel Table
 CREATE TABLE IF NOT EXISTS hotel (
     hotel_id SERIAL PRIMARY KEY,
     central_office_id INT NOT NULL,
@@ -74,14 +90,17 @@ CREATE TABLE IF NOT EXISTS hotel (
     country VARCHAR(100) NOT NULL,
     number_of_rooms INT NOT NULL,
     rating INT NOT NULL,
+    --Ensures that each hotel must belong to an existing hotel chain
     CONSTRAINT fk_hotel_chain
         FOREIGN KEY (central_office_id)
         REFERENCES hotel_chain(central_office_id)
         ON DELETE CASCADE,
+    --Ensures that each hotel must have a valid manager
     CONSTRAINT fk_hotel_manager
         FOREIGN KEY (manager_ssn)
         REFERENCES manager(ssn)
         ON DELETE RESTRICT,
+    -- Constraint ensures that number of hotel rooms is positive and non zero
     CONSTRAINT chk_hotel_number_of_rooms
         CHECK (number_of_rooms > 0),
     CONSTRAINT chk_hotel_rating
@@ -89,53 +108,69 @@ CREATE TABLE IF NOT EXISTS hotel (
     -- Constraint ensures employee_street_number > 0
     CONSTRAINT chk_hotel_street_num
         CHECK (street_number ~ '^[1-9][0-9]*$'),
+    -- Constraint ensures hotel address must be unique
     CONSTRAINT uq_hotel_address
         UNIQUE (street_name, street_number, postal_code)
     );
 
+--Create hotel email table
 CREATE TABLE IF NOT EXISTS hotel_email (
     hotel_id INT NOT NULL,
     email_address VARCHAR(255) NOT NULL,
     PRIMARY KEY (hotel_id, email_address),
+    --Each email must belong to a valid hotel
     CONSTRAINT fk_hotel_email
         FOREIGN KEY (hotel_id)
         REFERENCES hotel(hotel_id)
         ON DELETE CASCADE,
+    --Makes sure that email address contains @
     CONSTRAINT chk_hotel_email_format
         CHECK (email_address LIKE '%@%')
     );
 
+--Hotel Phone number table
 CREATE TABLE IF NOT EXISTS hotel_phone (
     hotel_id INT NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
     PRIMARY KEY (hotel_id, phone_number),
+    --Phone number must be associated with a valid hotel
     CONSTRAINT fk_hotel_phone
         FOREIGN KEY (hotel_id)
         REFERENCES hotel(hotel_id)
         ON DELETE CASCADE,
+    -- Phone number length must be between 7 and 20 nums
     CONSTRAINT chk_hotel_phone_length
         CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
+
+-- Table linking employees to roles in hotels
 CREATE TABLE IF NOT EXISTS works_as (
     ssn VARCHAR(20) NOT NULL,
     role_name VARCHAR(100) NOT NULL,
     hotel_id INT NOT NULL,
     PRIMARY KEY (ssn, role_name, hotel_id),
+
+    -- Employee must exist
     CONSTRAINT fk_works_as_employee
-        FOREIGN KEY (ssn)
-        REFERENCES employee(ssn)
-        ON DELETE CASCADE,
+    FOREIGN KEY (ssn)
+    REFERENCES employee(ssn)
+    ON DELETE CASCADE,
+
+    -- Role must exist
     CONSTRAINT fk_works_as_role
-        FOREIGN KEY (role_name)
-        REFERENCES role(role_name)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (role_name)
+    REFERENCES role(role_name)
+    ON DELETE RESTRICT,
+
+    -- Hotel must exist
     CONSTRAINT fk_works_as_hotel
-        FOREIGN KEY (hotel_id)
-        REFERENCES hotel(hotel_id)
-        ON DELETE CASCADE
+    FOREIGN KEY (hotel_id)
+    REFERENCES hotel(hotel_id)
+    ON DELETE CASCADE
     );
 
+-- Table for rooms in hotels
 CREATE TABLE IF NOT EXISTS room (
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
@@ -148,29 +183,43 @@ CREATE TABLE IF NOT EXISTS room (
     room_view_type VARCHAR(20) NOT NULL,
     damage_status VARCHAR(20) NOT NULL DEFAULT 'none',
     PRIMARY KEY (hotel_id, room_number),
+
+    -- Hotel must exist
     CONSTRAINT fk_room_hotel
     FOREIGN KEY (hotel_id)
     REFERENCES hotel(hotel_id)
     ON DELETE CASCADE,
+
+    -- Price must be positive
     CONSTRAINT chk_room_price CHECK (price > 0),
+
+    -- Capacity must be positive
     CONSTRAINT chk_room_capacity CHECK (room_capacity > 0),
+
+    -- Room view must be valid
     CONSTRAINT chk_room_view_type
     CHECK (room_view_type IN ('sea', 'mountain', 'city', 'garden', 'pool')),
+
+    -- Damage status must be valid
     CONSTRAINT chk_room_damage_status
     CHECK (damage_status IN ('none', 'minor', 'major', 'out_of_service'))
     );
 
+-- Table for room problems or damages
 CREATE TABLE IF NOT EXISTS room_problems_or_damages (
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
     problems_or_damages VARCHAR(255) NOT NULL,
     PRIMARY KEY (hotel_id, room_number, problems_or_damages),
+
+    -- Room must exist
     CONSTRAINT fk_room_problem_room
     FOREIGN KEY (hotel_id, room_number)
     REFERENCES room(hotel_id, room_number)
     ON DELETE CASCADE
     );
 
+-- Table for customers
 CREATE TABLE IF NOT EXISTS customer (
     driving_license_number VARCHAR(50) PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -180,25 +229,29 @@ CREATE TABLE IF NOT EXISTS customer (
     postal_code VARCHAR(20) NOT NULL,
     date_of_registration DATE NOT NULL,
 
-    --customer street num > 0
+    -- Street number must be positive
     CONSTRAINT chk_customer_street_num CHECK (street_number ~ '^[1-9][0-9]*$')
     );
 
+--Customer phone table
 CREATE TABLE IF NOT EXISTS customer_phone (
     driving_license_number VARCHAR(50) NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
     PRIMARY KEY (driving_license_number, phone_number),
+    -- Phone number must be linked to customer
     CONSTRAINT fk_customer_phone_customer
         FOREIGN KEY (driving_license_number)
         REFERENCES customer(driving_license_number)
         ON DELETE CASCADE,
+    -- Length restriction on phone number
     CONSTRAINT chk_customer_phone_length
         CHECK (char_length(phone_number) BETWEEN 7 AND 20)
     );
 
+-- Booking table
 CREATE TABLE IF NOT EXISTS booking (
-    booking_id SERIAL PRIMARY KEY,
-    driving_license_number VARCHAR(50) NOT NULL,
+                                       booking_id SERIAL PRIMARY KEY,
+                                       driving_license_number VARCHAR(50) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
     start_day DATE NOT NULL,
@@ -210,23 +263,32 @@ CREATE TABLE IF NOT EXISTS booking (
     area_snapshot VARCHAR(100) NOT NULL,
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- Customer must exist
     CONSTRAINT fk_booking_customer
-        FOREIGN KEY (driving_license_number)
-        REFERENCES customer(driving_license_number)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (driving_license_number)
+    REFERENCES customer(driving_license_number)
+    ON DELETE RESTRICT,
+
+    -- Room must exist
     CONSTRAINT fk_booking_room
-        FOREIGN KEY (hotel_id, room_number)
-        REFERENCES room(hotel_id, room_number)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (hotel_id, room_number)
+    REFERENCES room(hotel_id, room_number)
+    ON DELETE RESTRICT,
+
+    -- End date must be after start date
     CONSTRAINT chk_booking_dates
-        CHECK (end_day > start_day),
+    CHECK (end_day > start_day),
+
+    -- Price must be positive
     CONSTRAINT chk_booking_room_price_snapshot
-        CHECK (room_price_snapshot > 0)
+    CHECK (room_price_snapshot > 0)
     );
 
+-- Booking archive table
 CREATE TABLE IF NOT EXISTS booking_archive (
-    booking_id INT PRIMARY KEY,
-    driving_license_number VARCHAR(50) NOT NULL,
+                                               booking_id INT PRIMARY KEY,
+                                               driving_license_number VARCHAR(50) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
     start_day DATE NOT NULL,
@@ -239,12 +301,17 @@ CREATE TABLE IF NOT EXISTS booking_archive (
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- End date must be after start date
     CONSTRAINT chk_booking_archive_dates
     CHECK (end_day > start_day),
+
+    -- Price must be positive
     CONSTRAINT chk_booking_archive_room_price_snapshot
     CHECK (room_price_snapshot > 0)
     );
 
+-- Renting table
 CREATE TABLE IF NOT EXISTS renting (
     renting_id SERIAL PRIMARY KEY,
     ssn VARCHAR(20) NOT NULL,
@@ -262,31 +329,47 @@ CREATE TABLE IF NOT EXISTS renting (
     hotel_name_snapshot VARCHAR(150) NOT NULL,
     area_snapshot VARCHAR(100) NOT NULL,
     room_price_snapshot NUMERIC(10,2) NOT NULL,
+
+    -- Employee must exist
     CONSTRAINT fk_renting_employee
-        FOREIGN KEY (ssn)
-        REFERENCES employee(ssn)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (ssn)
+    REFERENCES employee(ssn)
+    ON DELETE RESTRICT,
+
+    -- Room must exist
     CONSTRAINT fk_renting_room
-        FOREIGN KEY (hotel_id, room_number)
-        REFERENCES room(hotel_id, room_number)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (hotel_id, room_number)
+    REFERENCES room(hotel_id, room_number)
+    ON DELETE RESTRICT,
+
     booking_id INT UNIQUE,
+
+    -- Booking must exist
     CONSTRAINT fk_renting_booking
-        FOREIGN KEY (booking_id)
-        REFERENCES booking(booking_id)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (booking_id)
+    REFERENCES booking(booking_id)
+    ON DELETE RESTRICT,
+
+    -- Customer must exist
     CONSTRAINT fk_renting_customer
-        FOREIGN KEY (driving_license_number)
-        REFERENCES customer(driving_license_number)
-        ON DELETE RESTRICT,
+    FOREIGN KEY (driving_license_number)
+    REFERENCES customer(driving_license_number)
+    ON DELETE RESTRICT,
+
+    -- End time must be after start time
     CONSTRAINT chk_renting_dates
-        CHECK (end_datetime > start_datetime),
+    CHECK (end_datetime > start_datetime),
+
+    -- Paid date only if paid
     CONSTRAINT chk_renting_paid_on
-        CHECK (paid_on IS NULL OR is_paid = TRUE),
+    CHECK (paid_on IS NULL OR is_paid = TRUE),
+
+    -- Price must be positive
     CONSTRAINT chk_renting_room_price_snapshot
-        CHECK (room_price_snapshot > 0)
+    CHECK (room_price_snapshot > 0)
     );
 
+-- Renting archive table
 CREATE TABLE IF NOT EXISTS renting_archive (
     renting_id INT PRIMARY KEY,
     ssn VARCHAR(20) NOT NULL,
@@ -305,12 +388,18 @@ CREATE TABLE IF NOT EXISTS renting_archive (
     area_snapshot VARCHAR(100) NOT NULL,
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- End time must be after start time
     CONSTRAINT chk_renting_archive_dates
-        CHECK (end_datetime > start_datetime),
+    CHECK (end_datetime > start_datetime),
+
+    -- Paid date only if paid
     CONSTRAINT chk_renting_archive_paid_on
-        CHECK (paid_on IS NULL OR is_paid = TRUE),
+    CHECK (paid_on IS NULL OR is_paid = TRUE),
+
+    -- Price must be positive
     CONSTRAINT chk_renting_archive_room_price_snapshot
-        CHECK (room_price_snapshot > 0)
+    CHECK (room_price_snapshot > 0)
     );
 
 -- =========================================
