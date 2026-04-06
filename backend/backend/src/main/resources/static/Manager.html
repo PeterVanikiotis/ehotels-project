@@ -14,17 +14,31 @@
         .field { display: flex; flex-direction: column; gap: 6px; }
         label { font-weight: bold; font-size: 13px; color: #555; }
         input, select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
-        button { padding: 10px 20px; border: none; border-radius: 8px; background: #1f4e79; color: white; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; background: #1f4e79; color: white; cursor: pointer; font-size: 14px; transition: 0.2s; }
         button:hover { background: #163a59; }
         button.danger { background: #a33a3a; }
+        button.secondary { background: #666; }
+
         .message { margin-top: 15px; padding: 12px; border-radius: 8px; display: none; font-size: 14px; font-weight: bold; }
         .success { background: #edf8ef; color: #22643a; border: 1px solid #c3e6cb; }
         .error { background: #fdeeee; color: #a33a3a; border: 1px solid #f5c6cb; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 14px; }
         th { background: #f8f9fa; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; }
+
+        /* Modal Overlay */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 650px; position: relative; }
     </style>
 </head>
 <body>
@@ -55,13 +69,13 @@
                 <div class="field"><label>Postal Code</label><input type="text" id="h_postal"></div>
                 <div class="field"><label>Emails</label><input type="text" id="h_emails"></div>
             </div>
-            <button id="updateHotelBtn">Save Hotel Info</button>
+            <button id="updateHotelBtn">Save Hotel Changes</button>
         </div>
 
         <div class="section">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h2>Employee Management</h2>
-                <button id="openAddEmployeeModal">Add New Employee</button>
+                <button id="openAddEmployeeModal" style="background:#28a745;">+ Add New Employee</button>
             </div>
             <table>
                 <thead>
@@ -85,14 +99,15 @@
     <div class="modal-content">
         <h2 id="modalTitle">Employee Profile</h2>
         <div class="form-grid">
-            <div class="field"><label>SSN</label><input type="text" id="e_ssn"></div>
+            <div class="field"><label>SSN (9 Digits)</label><input type="text" id="e_ssn"></div>
             <div class="field"><label>First Name</label><input type="text" id="e_first"></div>
+            <div class="field"><label>Middle Name</label><input type="text" id="e_middle"></div>
             <div class="field"><label>Last Name</label><input type="text" id="e_last"></div>
             <div class="field"><label>Street Name</label><input type="text" id="e_street"></div>
             <div class="field"><label>Street number</label><input type="number" id="e_num"></div>
             <div class="field"><label>Postal Code</label><input type="text" id="e_postal"></div>
             <div class="field">
-                <label>Assign Role</label>
+                <label>Assigned Role</label>
                 <select id="e_role">
                     <option value="Receptionist">Receptionist</option>
                     <option value="Housekeeping">Housekeeping</option>
@@ -100,15 +115,16 @@
                 </select>
             </div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
+        <div style="display:flex; gap:10px; margin-top:10px;">
             <button id="saveEmployeeBtn">Save Employee</button>
-            <button onclick="closeModal()" style="background:#666;">Cancel</button>
+            <button class="secondary" onclick="closeModal()">Cancel</button>
         </div>
     </div>
 </div>
 
 <script>
     let activeHotel = null;
+    let employeeList = []; // Store local copy to avoid HTML attribute errors
     const msgBox = document.getElementById('statusMsg');
 
     function notify(text, type) {
@@ -116,9 +132,10 @@
         msgBox.className = "message " + type;
         msgBox.style.display = "block";
         window.scrollTo(0,0);
-        setTimeout(() => { msgBox.style.display = 'none'; }, 5000);
+        setTimeout(() => { msgBox.style.display = 'none'; }, 6000);
     }
 
+    // LOGIN
     document.getElementById('verifyBtn').onclick = async () => {
         const ssn = document.getElementById('managerSsn').value.trim();
         const res = await fetch(`/api/manager/login?ssn=${encodeURIComponent(ssn)}`);
@@ -126,39 +143,72 @@
             activeHotel = await res.json();
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('mainPortal').style.display = 'block';
-            loadHotelData(); loadEmployees(); loadCustomers();
-        } else { notify("Access Denied: Invalid Manager SSN", "error"); }
+            loadHotelData();
+            loadEmployees();
+            loadCustomers();
+        } else { notify("Access Denied: SSN not recognized as Manager.", "error"); }
     };
 
     function loadHotelData() {
-        document.getElementById('h_name').value = activeHotel.hotelName;
-        document.getElementById('h_rating').value = activeHotel.rating;
-        document.getElementById('h_street').value = activeHotel.streetName;
-        document.getElementById('h_num').value = activeHotel.streetNumber;
-        document.getElementById('h_postal').value = activeHotel.postalCode;
+        document.getElementById('h_name').value = activeHotel.hotelName || "";
+        document.getElementById('h_rating').value = activeHotel.rating || "";
+        document.getElementById('h_street').value = activeHotel.streetName || "";
+        document.getElementById('h_num').value = activeHotel.streetNumber || "";
+        document.getElementById('h_postal').value = activeHotel.postalCode || "";
         document.getElementById('h_emails').value = (activeHotel.emailAddresses || []).join(', ');
     }
 
+    // EMPLOYEES
     async function loadEmployees() {
         const res = await fetch(`/api/manager/employees?hotelId=${activeHotel.hotelId}`);
-        const list = await res.json();
-        document.getElementById('empTableBody').innerHTML = list.map(e => `
+        employeeList = await res.json();
+        const body = document.getElementById('empTableBody');
+        body.innerHTML = employeeList.map(e => `
             <tr>
                 <td>${e.ssn}</td>
                 <td>${e.firstName} ${e.lastName}</td>
                 <td><b>${e.role}</b></td>
                 <td>${e.streetNumber}</td>
                 <td>
-                    <button onclick='editEmp(${JSON.stringify(e)})'>Edit</button>
+                    <button onclick="handleEditClick('${e.ssn}')">Edit</button>
                     <button class="danger" onclick="deleteEmp('${e.ssn}')">Remove</button>
                 </td>
             </tr>`).join('');
     }
 
+    function handleEditClick(ssn) {
+        const emp = employeeList.find(e => e.ssn === ssn);
+        if (!emp) return;
+
+        document.getElementById('modalTitle').innerText = "Edit Employee";
+        document.getElementById('e_ssn').value = emp.ssn;
+        document.getElementById('e_ssn').disabled = true;
+        document.getElementById('e_first').value = emp.firstName;
+        document.getElementById('e_middle').value = emp.middleName || "";
+        document.getElementById('e_last').value = emp.lastName;
+        document.getElementById('e_street').value = emp.streetName;
+        document.getElementById('e_num').value = emp.streetNumber;
+        document.getElementById('e_postal').value = emp.postalCode;
+        document.getElementById('e_role').value = (emp.role === 'Manager') ? 'Receptionist' : emp.role;
+
+        openModal();
+    }
+
+    document.getElementById('openAddEmployeeModal').onclick = () => {
+        document.getElementById('modalTitle').innerText = "Add New Employee";
+        document.getElementById('e_ssn').disabled = false;
+        // Clear all fields
+        const fields = ['e_ssn', 'e_first', 'e_middle', 'e_last', 'e_street', 'e_num', 'e_postal'];
+        fields.forEach(f => document.getElementById(f).value = "");
+        document.getElementById('e_role').value = 'Receptionist';
+        openModal();
+    };
+
     async function saveEmployee() {
         const emp = {
             ssn: document.getElementById('e_ssn').value.trim(),
             firstName: document.getElementById('e_first').value.trim(),
+            middleName: document.getElementById('e_middle').value.trim(),
             lastName: document.getElementById('e_last').value.trim(),
             streetName: document.getElementById('e_street').value.trim(),
             streetNumber: document.getElementById('e_num').value.trim(),
@@ -166,23 +216,31 @@
             role: document.getElementById('e_role').value
         };
 
-        if(!/^\d{9}$/.test(emp.ssn)) return notify("SSN must be 9 digits.", "error");
+        if(!/^\d{9}$/.test(emp.ssn)) return notify("SSN must be exactly 9 digits.", "error");
 
         const res = await fetch(`/api/manager/employee/save?hotelId=${activeHotel.hotelId}`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(emp)
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(emp)
         });
 
-        if(res.ok) { notify("Employee saved!", "success"); closeModal(); loadEmployees(); }
-        else { notify("Error saving: " + await res.text(), "error"); }
+        if(res.ok) {
+            notify("Employee Saved Successfully", "success");
+            closeModal();
+            loadEmployees();
+        } else {
+            notify("Error: " + await res.text(), "error");
+        }
     }
 
     async function deleteEmp(ssn) {
-        if(!confirm("Are you sure?")) return;
+        if(!confirm("Permanently remove this employee?")) return;
         const res = await fetch(`/api/manager/employee/delete?targetSsn=${ssn}`, { method: 'DELETE' });
-        if(res.ok) { notify("Employee deleted.", "success"); loadEmployees(); }
+        if(res.ok) { notify("Employee Removed", "success"); loadEmployees(); }
         else { notify(await res.text(), "error"); }
     }
 
+    // CUSTOMERS
     async function loadCustomers() {
         const res = await fetch('/api/manager/customers');
         const list = await res.json();
@@ -195,42 +253,40 @@
     }
 
     async function deleteCust(lic) {
-        if(!confirm("Remove customer?")) return;
+        if(!confirm("Delete customer profile?")) return;
         const res = await fetch(`/api/manager/customer/delete?license=${lic}`, { method: 'DELETE' });
-        if(res.ok) loadCustomers(); else notify(await res.text(), "error");
+        if(res.ok) { notify("Customer Deleted", "success"); loadCustomers(); }
+        else { notify(await res.text(), "error"); }
     }
 
-    function editEmp(e) {
-        document.getElementById('e_ssn').value = e.ssn; document.getElementById('e_ssn').disabled = true;
-        document.getElementById('e_first').value = e.firstName; document.getElementById('e_last').value = e.lastName;
-        document.getElementById('e_street').value = e.streetName; document.getElementById('e_num').value = e.streetNumber;
-        document.getElementById('e_postal').value = e.postalCode;
-        // Set the dropdown (if they are a Manager, we default it to Receptionist for safety)
-        document.getElementById('e_role').value = (e.role === 'Manager') ? 'Receptionist' : e.role;
-        openModal();
-    }
-
-    document.getElementById('openAddEmployeeModal').onclick = () => {
-        document.getElementById('e_ssn').disabled = false; document.getElementById('e_ssn').value = "";
-        openModal();
-    };
-
-    function closeModal() { document.getElementById('employeeModal').style.display = 'none'; }
-    document.getElementById('saveEmployeeBtn').onclick = saveEmployee;
-
-    // Hotel update button
+    // HOTEL INFO
     document.getElementById('updateHotelBtn').onclick = async () => {
+        const rating = parseInt(document.getElementById('h_rating').value);
+        if (rating < 1 || rating > 5) return notify("Rating must be 1-5", "error");
+
         const updated = { ...activeHotel,
-            hotelName: document.getElementById('h_name').value, rating: document.getElementById('h_rating').value,
-            streetName: document.getElementById('h_street').value, streetNumber: document.getElementById('h_num').value,
+            hotelName: document.getElementById('h_name').value,
+            rating: rating,
+            streetName: document.getElementById('h_street').value,
+            streetNumber: document.getElementById('h_num').value,
             postalCode: document.getElementById('h_postal').value,
             emailAddresses: document.getElementById('h_emails').value.split(',').map(s => s.trim()).filter(s => s !== "")
         };
+
         const res = await fetch('/api/manager/hotel/update', {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(updated)
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updated)
         });
-        if(res.ok) notify("Hotel info updated!", "success");
+        if(res.ok) notify("Hotel profile updated!", "success");
     };
+
+    // Modal Helpers
+    function openModal() { document.getElementById('employeeModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('employeeModal').style.display = 'none'; }
+
+    // Explicit Event Attachment
+    document.getElementById('saveEmployeeBtn').addEventListener('click', saveEmployee);
 </script>
 </body>
 </html>
