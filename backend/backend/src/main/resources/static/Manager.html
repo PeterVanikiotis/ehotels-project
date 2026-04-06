@@ -242,7 +242,7 @@
 
     // CUSTOMERS
     async function loadCustomers() {
-        const res = await fetch('/api/manager/customers');
+        const res = await fetch(`/api/manager/customers?hotelId=${activeHotel.hotelId}`);
         const list = await res.json();
         document.getElementById('custTableBody').innerHTML = list.map(c => `
             <tr>

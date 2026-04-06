@@ -113,9 +113,28 @@ public class CustomerRepository {
 
 
     //Used in manager interface in order to see the customer list
-    public List<CustomerDto> getAllCustomers() {
-        String sql = "SELECT * FROM customer ORDER BY last_name ASC";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+    public List<CustomerDto> getCustomersByHotel(Integer hotelId) {
+        String sql = """
+        SELECT DISTINCT c.driving_license_number,
+                        c.first_name,
+                        c.last_name
+        FROM customer c
+        JOIN (
+            SELECT driving_license_number
+            FROM booking
+            WHERE hotel_id = :hotelId
+
+            UNION
+
+            SELECT driving_license_number
+            FROM renting
+            WHERE hotel_id = :hotelId
+        ) hc
+        ON c.driving_license_number = hc.driving_license_number
+        ORDER BY c.last_name ASC, c.first_name ASC
+    """;
+
+        return jdbcTemplate.query(sql, new MapSqlParameterSource("hotelId", hotelId), (rs, rowNum) -> {
             CustomerDto c = new CustomerDto();
             c.setDrivingLicenseNumber(rs.getString("driving_license_number"));
             c.setFirstName(rs.getString("first_name"));
