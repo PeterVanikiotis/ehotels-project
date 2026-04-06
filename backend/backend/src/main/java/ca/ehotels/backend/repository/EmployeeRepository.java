@@ -551,12 +551,12 @@ public class EmployeeRepository {
     //Used in Manager Interface to insert or update an employee
     @Transactional
     public void saveOrUpdateEmployee(EmployeeDto emp, Integer hotelId) {
-        // 1. Upsert the base Employee record
         String employeeSql = """
         INSERT INTO employee (ssn, first_name, middle_name, last_name, street_name, street_number, postal_code)
         VALUES (:ssn, :firstName, :middleName, :lastName, :streetName, :streetNumber, :postalCode)
         ON CONFLICT (ssn) DO UPDATE SET
             first_name = EXCLUDED.first_name,
+            middle_name = EXCLUDED.middle_name,
             last_name = EXCLUDED.last_name,
             street_name = EXCLUDED.street_name,
             street_number = EXCLUDED.street_number,
@@ -572,17 +572,39 @@ public class EmployeeRepository {
                 .addValue("streetNumber", emp.getStreetNumber())
                 .addValue("postalCode", emp.getPostalCode())
                 .addValue("hotelId", hotelId)
-                .addValue("role", emp.getRole()); // This comes from the dropdown
+                .addValue("role", emp.getRole());
 
         jdbcTemplate.update(employeeSql, params);
 
-        // 2. Role Logic: Delete the current role assignment for this hotel
-        // (We exclude 'Manager' so we don't accidentally remove a manager's primary status)
-        String deleteOldRole = "DELETE FROM works_as WHERE ssn = :ssn AND hotel_id = :hotelId AND role_name <> 'Manager'";
+        String managerCheckSql = """
+        SELECT COUNT(*)
+        FROM hotel
+        WHERE manager_ssn = :ssn
+          AND hotel_id = :hotelId
+    """;
+
+        Integer isManagerForThisHotel = jdbcTemplate.queryForObject(
+                managerCheckSql,
+                params,
+                Integer.class
+        );
+
+        if (isManagerForThisHotel != null && isManagerForThisHotel > 0) {
+            return;
+        }
+
+        String deleteOldRole = """
+        DELETE FROM works_as
+        WHERE ssn = :ssn
+          AND hotel_id = :hotelId
+          AND role_name <> 'Manager'
+    """;
         jdbcTemplate.update(deleteOldRole, params);
 
-        // 3. Insert the new role selected by the manager
-        String insertRole = "INSERT INTO works_as (ssn, role_name, hotel_id) VALUES (:ssn, :role, :hotelId)";
+        String insertRole = """
+        INSERT INTO works_as (ssn, role_name, hotel_id)
+        VALUES (:ssn, :role, :hotelId)
+    """;
         jdbcTemplate.update(insertRole, params);
     }
 
