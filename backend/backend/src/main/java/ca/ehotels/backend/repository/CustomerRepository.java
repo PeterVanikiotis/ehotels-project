@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Repository
 public class CustomerRepository {
 
@@ -107,5 +109,24 @@ public class CustomerRepository {
         int rows2 = jdbcTemplate.update(insertPhoneSql, params);
 
         return rows1 + rows2;
+    }
+
+
+    //Used in manager interface in order to see the customer list
+    public List<CustomerDto> getAllCustomers() {
+        String sql = "SELECT * FROM customer ORDER BY last_name ASC";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            CustomerDto c = new CustomerDto();
+            c.setDrivingLicenseNumber(rs.getString("driving_license_number"));
+            c.setFirstName(rs.getString("first_name"));
+            c.setLastName(rs.getString("last_name"));
+            return c;
+        });
+    }
+    //Used in manager interface in order to remove profiles
+    public void deleteCustomer(String license) {
+        // Note: This will fail if the customer has active bookings due to ON DELETE RESTRICT
+        String sql = "DELETE FROM customer WHERE driving_license_number = :license";
+        jdbcTemplate.update(sql, new MapSqlParameterSource("license", license));
     }
 }

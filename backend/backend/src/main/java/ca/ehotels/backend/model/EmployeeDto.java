@@ -9,6 +9,7 @@ public class EmployeeDto {
     private String streetName;
     private String streetNumber;
     private String postalCode;
+    private String role;
 
     public String getSsn() { return ssn; }
     public void setSsn(String ssn) { this.ssn = ssn; }
@@ -30,4 +31,6 @@ public class EmployeeDto {
 
     public String getPostalCode() { return postalCode; }
     public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

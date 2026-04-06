@@ -100,18 +100,23 @@ public class CustomerController {
 
     @PostMapping("/book")
     public ResponseEntity<String> createBooking(@RequestBody CreateBookingRequest request) {
+        // Basic date check
         if (!request.getEndDate().isAfter(request.getStartDate())) {
             return ResponseEntity.badRequest().body("End date must be after start date.");
         }
 
-        int rowsInserted = bookingRepository.createBooking(request);
-
-        if (rowsInserted == 0) {
-            return ResponseEntity.badRequest().body("Booking failed. Customer or room was not found.");
+        try {
+            bookingRepository.createBooking(request);
+            return ResponseEntity.ok("Booking created successfully!");
+        } catch (RuntimeException e) {
+            // Returns the "License not found" or "Room already booked" message
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An unexpected error occurred.");
         }
-
-        return ResponseEntity.ok("Booking created successfully.");
     }
+
+
     @PostMapping("/create")
     public ResponseEntity<String> createCustomer(@RequestBody CreateCustomerRequest request) {
         if (isBlank(request.getDrivingLicenseNumber())

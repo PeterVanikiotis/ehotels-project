@@ -2,6 +2,7 @@ package ca.ehotels.backend.repository;
 
 import ca.ehotels.backend.model.RentingDto;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -54,6 +55,7 @@ public class RentingRepository {
     }
 
     public void deleteById(Integer rentingId) {
+        // The SQL Trigger in schema.sql will automatically move this to renting_archive
         String sql = "DELETE FROM renting WHERE renting_id = ?";
         jdbcTemplate.update(sql, rentingId);
     }

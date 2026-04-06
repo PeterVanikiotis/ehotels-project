@@ -16,11 +16,9 @@ public class BookingRepository {
     }
 
     public void deleteById(Integer bookingId) {
+        // The SQL Trigger in schema.sql will automatically move this to archive_booking
         String sql = "DELETE FROM booking WHERE booking_id = :bookingId";
-
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("bookingId", bookingId);
-
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("bookingId", bookingId);
         jdbcTemplate.update(sql, params);
     }
 
@@ -66,43 +64,38 @@ public class BookingRepository {
 
     public int createBooking(CreateBookingRequest request) {
         String sql = """
-            INSERT INTO booking (
-                driving_license_number,
-                hotel_id,
-                room_number,
-                start_day,
-                end_day,
-                customer_name_snapshot,
-                hotel_name_snapshot,
-                area_snapshot,
-                room_price_snapshot
-            )
-            SELECT
-                c.driving_license_number,
-                r.hotel_id,
-                r.room_number,
-                :startDate,
-                :endDate,
-                c.first_name || ' ' || c.last_name,
-                h.hotel_name,
-                h.area,
-                r.price
-            FROM customer c
-            JOIN room r
-              ON r.hotel_id = :hotelId
-             AND r.room_number = :roomNumber
-            JOIN hotel h
-              ON h.hotel_id = r.hotel_id
-            WHERE c.driving_license_number = :drivingLicenseNumber
-            """;
+        INSERT INTO booking (
+            driving_license_number, hotel_id, room_number,
+            start_day, end_day, customer_name_snapshot,
+            hotel_name_snapshot, area_snapshot, room_price_snapshot
+        )
+        SELECT
+            c.driving_license_number, r.hotel_id, r.room_number,
+            :startDate, :endDate, (c.first_name || ' ' || c.last_name),
+            h.hotel_name, h.area, r.price
+        FROM customer c
+        JOIN room r ON r.hotel_id = :hotelId AND r.room_number = :roomNumber
+        JOIN hotel h ON h.hotel_id = r.hotel_id
+        WHERE c.driving_license_number = :drivingLicenseNumber
+        """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("drivingLicenseNumber", request.getDrivingLicenseNumber())
                 .addValue("hotelId", request.getHotelId())
                 .addValue("roomNumber", request.getRoomNumber())
-                .addValue("startDate", request.getStartDate())
-                .addValue("endDate", request.getEndDate());
+                .addValue("startDate", java.sql.Date.valueOf(request.getStartDate()))
+                .addValue("endDate", java.sql.Date.valueOf(request.getEndDate()));
 
-        return jdbcTemplate.update(sql, params);
+        try {
+            int rows = jdbcTemplate.update(sql, params);
+            if (rows == 0) {
+                throw new RuntimeException("License not found. Please register as a customer first.");
+            }
+            return rows;
+        } catch (org.springframework.dao.DataAccessException e) {
+            // Relays "Room already booked" or "Room is damaged" messages from your triggers
+            String dbMessage = e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage();
+            throw new RuntimeException(dbMessage);
+        }
     }
 }
