@@ -99,7 +99,6 @@ public class EmployeeRepository {
                     FROM booking b
                     WHERE b.hotel_id = r.hotel_id
                       AND b.room_number = r.room_number
-                      AND b.archive_status = FALSE
                       AND b.start_day < :endDate
                       AND b.end_day > :startDate
               )
@@ -108,7 +107,6 @@ public class EmployeeRepository {
                     FROM renting rt
                     WHERE rt.hotel_id = r.hotel_id
                       AND rt.room_number = r.room_number
-                      AND rt.archive_status = FALSE
                       AND rt.start_datetime::date < :endDate
                       AND rt.end_datetime::date > :startDate
               )
@@ -193,7 +191,6 @@ public class EmployeeRepository {
             JOIN works_as w
               ON w.hotel_id = b.hotel_id
             WHERE w.ssn = :ssn
-              AND b.archive_status = FALSE
             ORDER BY b.start_day, b.booking_id
             """;
 
@@ -221,10 +218,8 @@ public class EmployeeRepository {
     public int convertBookingToRenting(ConvertBookingRequest request) {
         String archiveBookingSql = """
             UPDATE booking
-            SET archive_status = TRUE,
-                check_in_time = CURRENT_TIMESTAMP
+            SET check_in_time = CURRENT_TIMESTAMP
             WHERE booking_id = :bookingId
-              AND archive_status = FALSE
             """;
 
         String insertRentingSql = """
@@ -237,7 +232,6 @@ public class EmployeeRepository {
                 start_datetime,
                 end_datetime,
                 actual_check_in_time,
-                archive_status,
                 is_paid,
                 paid_on,
                 customer_name_snapshot,
@@ -254,7 +248,6 @@ public class EmployeeRepository {
                 b.start_day::timestamp + INTERVAL '15 hours',
                 b.end_day::timestamp + INTERVAL '11 hours',
                 CURRENT_TIMESTAMP,
-                FALSE,
                 TRUE,
                 CURRENT_TIMESTAMP,
                 b.customer_name_snapshot,
@@ -266,7 +259,6 @@ public class EmployeeRepository {
               ON w.hotel_id = b.hotel_id
             WHERE b.booking_id = :bookingId
               AND w.ssn = :ssn
-              AND b.archive_status = TRUE
             """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -308,7 +300,6 @@ public class EmployeeRepository {
             JOIN works_as w
               ON w.hotel_id = r.hotel_id
             WHERE w.ssn = :ssn
-              AND r.archive_status = FALSE
             ORDER BY r.start_datetime, r.renting_id
             """;
 
@@ -338,10 +329,8 @@ public class EmployeeRepository {
     public int checkoutRenting(CheckoutRentingRequest request) {
         String sql = """
             UPDATE renting
-            SET archive_status = TRUE,
-                actual_check_out_time = CURRENT_TIMESTAMP
+            SET actual_check_out_time = CURRENT_TIMESTAMP
             WHERE renting_id = :rentingId
-              AND archive_status = FALSE
               AND hotel_id IN (
                   SELECT hotel_id
                   FROM works_as

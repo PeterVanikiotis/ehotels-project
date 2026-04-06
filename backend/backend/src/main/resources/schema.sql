@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS renting (
     ssn VARCHAR(20) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
-    booking_id INT,
+    booking_id INT UNIQUE,
     driving_license_number VARCHAR(50) NOT NULL,
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
@@ -270,7 +270,6 @@ CREATE TABLE IF NOT EXISTS renting (
         FOREIGN KEY (hotel_id, room_number)
         REFERENCES room(hotel_id, room_number)
         ON DELETE RESTRICT,
-    booking_id INT UNIQUE,
     CONSTRAINT fk_renting_booking
         FOREIGN KEY (booking_id)
         REFERENCES booking(booking_id)
