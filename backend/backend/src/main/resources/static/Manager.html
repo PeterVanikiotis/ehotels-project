@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Portal - e-Hotels</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .top-link {
+            display: inline-block;
+            margin-bottom: 18px;
+            text-decoration: none;
+            color: #1f4e79;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+        }
+
+        h1 { margin-top: 0; margin-bottom: 20px; color: #1f4e79; }
+        h2 { margin-top: 0; margin-bottom: 14px; font-size: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+
+        .section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #e3e3e3;
+            border-radius: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        label { font-weight: bold; font-size: 13px; color: #555; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #1f4e79;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #163a59; }
+        button.danger { background: #a33a3a; }
+        button.danger:hover { background: #822e2e; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th { background: #f8f9fa; color: #333; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .success { background: #edf8ef; color: #22643a; }
+        .error { background: #fdeeee; color: #a33a3a; }
+    </style>
+</head>
+<body>
+
+<a class="top-link" href="/index.html">← Back to home</a>
+
+<div class="container">
+    <h1>Manager Administration Portal</h1>
+
+    <div id="authSection" class="section" style="border: 2px solid #1f4e79;">
+        <h2>Manager Verification</h2>
+        <p>Please enter your Manager SSN to access your hotel's controls.</p>
+        <div class="field" style="max-width: 300px;">
+            <input type="password" id="managerSsn" placeholder="Enter SSN">
+            <button id="verifyBtn" style="margin-top:12px;">Login to Portal</button>
+        </div>
+    </div>
+
+    <div id="mainPortal" style="display:none;">
+
+        <div class="section">
+            <h2 id="hotelHeader">Hotel Information</h2>
+            <div class="form-grid">
+                <div class="field"><label>Hotel Name</label><input type="text" id="h_name"></div>
+                <div class="field"><label>Rating</label><input type="number" id="h_rating" min="1" max="5"></div>
+                <div class="field"><label>Street Name</label><input type="text" id="h_street"></div>
+                <div class="field"><label>Number</label><input type="text" id="h_num"></div>
+                <div class="field"><label>Postal Code</label><input type="text" id="h_postal"></div>
+            </div>
+            <button id="updateHotelBtn">Save Hotel Info</button>
+        </div>
+
+        <div class="section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Employee Management</h2>
+                <button id="openAddEmployeeModal">Add New Employee</button>
+            </div>
+            <table>
+                <thead>
+                <tr><th>SSN</th><th>Full Name</th><th>Address</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="empTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Customer Directory</h2>
+            <p>Manage the system-wide customer database. You can remove inactive profiles here.</p>
+            <table>
+                <thead>
+                <tr><th>License Number</th><th>Customer Name</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="custTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="employeeModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Employee Profile</h2>
+        <div class="form-grid">
+            <div class="field"><label>SSN</label><input type="text" id="e_ssn"></div>
+            <div class="field"><label>First Name</label><input type="text" id="e_first"></div>
+            <div class="field"><label>Middle Name</label><input type="text" id="e_middle"></div>
+            <div class="field"><label>Last Name</label><input type="text" id="e_last"></div>
+            <div class="field"><label>Street Name</label><input type="text" id="e_street"></div>
+            <div class="field"><label>Number</label><input type="text" id="e_num"></div>
+            <div class="field"><label>Postal Code</label><input type="text" id="e_postal"></div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button id="saveEmployeeBtn">Save Employee</button>
+            <button onclick="closeModal()" style="background:#666;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeHotel = null;
+    let managerSsn = "";
+
+    // --- 1. Login/Verification ---
+    document.getElementById('verifyBtn').onclick = async () => {
+        managerSsn = document.getElementById('managerSsn').value.trim();
+        if (!managerSsn) return alert("Please enter your SSN.");
+
+        const res = await fetch(`/api/manager/login?ssn=${encodeURIComponent(managerSsn)}`);
+        if (res.ok) {
+            activeHotel = await res.json();
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('mainPortal').style.display = 'block';
+            loadHotelData();
+            loadEmployees();
+            loadCustomers();
+        } else {
+            alert("Unauthorized: No hotel found managed by this SSN.");
+        }
+    };
+
+    // --- 2. Hotel Logic ---
+    function loadHotelData() {
+        document.getElementById('h_name').value = activeHotel.hotelName;
+        document.getElementById('h_rating').value = activeHotel.rating;
+        document.getElementById('h_street').value = activeHotel.streetName;
+        document.getElementById('h_num').value = activeHotel.streetNumber;
+        document.getElementById('h_postal').value = activeHotel.postalCode;
+    }
+
+    document.getElementById('updateHotelBtn').onclick = async () => {
+        const updated = { ...activeHotel,
+            hotelName: document.getElementById('h_name').value,
+            rating: document.getElementById('h_rating').value,
+            streetName: document.getElementById('h_street').value,
+            streetNumber: document.getElementById('h_num').value,
+            postalCode: document.getElementById('h_postal').value
+        };
+
+        const res = await fetch('/api/manager/hotel/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(updated)
+        });
+        if(res.ok) alert("Hotel info updated!");
+    };
+
+    // --- 3. Employee Logic ---
+    async function loadEmployees() {
+        const res = await fetch(`/api/manager/employees?hotelId=${activeHotel.hotelId}`);
+        const list = await res.json();
+        const body = document.getElementById('empTableBody');
+        body.innerHTML = list.map(e => `
+            <tr>
+                <td>${e.ssn}</td>
+                <td>${e.firstName} ${e.lastName}</td>
+                <td>${e.streetNumber} ${e.streetName}</td>
+                <td>
+                    <button onclick='editEmp(${JSON.stringify(e)})'>Edit</button>
+                    <button class="danger" onclick="deleteEmp('${e.ssn}')">Remove</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function editEmp(e) {
+        document.getElementById('e_ssn').value = e.ssn;
+        document.getElementById('e_ssn').disabled = true; // Don't let manager change the SSN (PK)
+        document.getElementById('e_first').value = e.firstName;
+        document.getElementById('e_middle').value = e.middleName || "";
+        document.getElementById('e_last').value = e.lastName;
+        document.getElementById('e_street').value = e.streetName;
+        document.getElementById('e_num').value = e.streetNumber;
+        document.getElementById('e_postal').value = e.postalCode;
+        openModal();
+    }
+
+    document.getElementById('openAddEmployeeModal').onclick = () => {
+        document.getElementById('e_ssn').disabled = false;
+        document.getElementById('e_ssn').value = "";
+        // Clear other fields...
+        openModal();
+    };
+
+    async function saveEmployee() {
+        const emp = {
+            ssn: document.getElementById('e_ssn').value,
+            firstName: document.getElementById('e_first').value,
+            middleName: document.getElementById('e_middle').value,
+            lastName: document.getElementById('e_last').value,
+            streetName: document.getElementById('e_street').value,
+            streetNumber: document.getElementById('e_num').value,
+            postalCode: document.getElementById('e_postal').value
+        };
+
+        const res = await fetch(`/api/manager/employee/save?hotelId=${activeHotel.hotelId}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(emp)
+        });
+
+        if(res.ok) {
+            closeModal();
+            loadEmployees();
+        }
+    }
+
+    async function deleteEmp(ssn) {
+        if(!confirm("Are you sure you want to remove this employee record?")) return;
+        const res = await fetch(`/api/manager/employee/delete?targetSsn=${ssn}`, { method: 'DELETE' });
+        if(res.ok) loadEmployees();
+        else alert("Cannot delete: This employee may be assigned as a manager.");
+    }
+
+    // --- 4. Customer Logic ---
+    async function loadCustomers() {
+        const res = await fetch('/api/manager/customers');
+        const list = await res.json();
+        document.getElementById('custTableBody').innerHTML = list.map(c => `
+            <tr>
+                <td>${c.drivingLicenseNumber}</td>
+                <td>${c.firstName} ${c.lastName}</td>
+                <td><button class="danger" onclick="deleteCust('${c.drivingLicenseNumber}')">Delete Profile</button></td>
+            </tr>
+        `).join('');
+    }
+
+    async function deleteCust(lic) {
+        if(!confirm("Permanently delete this customer? This will fail if they have active bookings.")) return;
+        const res = await fetch(`/api/manager/customer/delete?license=${lic}`, { method: 'DELETE' });
+        if(res.ok) loadCustomers();
+        else alert(await res.text());
+    }
+
+    // Modal Helpers
+    function openModal() { document.getElementById('employeeModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('employeeModal').style.display = 'none'; }
+    document.getElementById('saveEmployeeBtn').onclick = saveEmployee;
+</script>
+</body>
+</html>

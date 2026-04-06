@@ -515,4 +515,70 @@ public class EmployeeRepository {
             return dto;
         }
     }
+
+    //Used in Manager interface to see list of employees at a hotel
+    public List<EmployeeDto> getEmployeesByHotel(Integer hotelId) {
+        String sql = """
+        SELECT e.* FROM employee e
+        JOIN works_as w ON e.ssn = w.ssn
+        WHERE w.hotel_id = :hotelId
+    """;
+        return jdbcTemplate.query(sql, new MapSqlParameterSource("hotelId", hotelId), (rs, rowNum) -> {
+            EmployeeDto e = new EmployeeDto();
+            e.setSsn(rs.getString("ssn"));
+            e.setFirstName(rs.getString("first_name"));
+            e.setLastName(rs.getString("last_name"));
+            e.setStreetName(rs.getString("street_name"));
+            e.setStreetNumber(rs.getString("street_number"));
+            e.setPostalCode(rs.getString("postal_code"));
+            return e;
+        });
+    }
+
+
+    //Used in manager interface to delete employees
+    public void deleteEmployee(String ssn) {
+        jdbcTemplate.update("DELETE FROM employee WHERE ssn = :ssn", new MapSqlParameterSource("ssn", ssn));
+    }
+
+
+
+    //Used in Manager Interface to insert or update an employee
+    @Transactional
+    public void saveOrUpdateEmployee(EmployeeDto emp, Integer hotelId) {
+        // 1. Insert or Update the base Employee table
+        String employeeSql = """
+        INSERT INTO employee (ssn, first_name, middle_name, last_name, street_name, street_number, postal_code)
+        VALUES (:ssn, :firstName, :middleName, :lastName, :streetName, :streetNumber, :postalCode)
+        ON CONFLICT (ssn) DO UPDATE SET
+            first_name = EXCLUDED.first_name,
+            middle_name = EXCLUDED.middle_name,
+            last_name = EXCLUDED.last_name,
+            street_name = EXCLUDED.street_name,
+            street_number = EXCLUDED.street_number,
+            postal_code = EXCLUDED.postal_code
+    """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("ssn", emp.getSsn())
+                .addValue("firstName", emp.getFirstName())
+                .addValue("middleName", emp.getMiddleName())
+                .addValue("lastName", emp.getLastName())
+                .addValue("streetName", emp.getStreetName())
+                .addValue("streetNumber", emp.getStreetNumber())
+                .addValue("postalCode", emp.getPostalCode())
+                .addValue("hotelId", hotelId);
+
+        jdbcTemplate.update(employeeSql, params);
+
+        // 2. Ensure they are linked to this hotel in the 'works_as' table
+        // We'll assume a default role of 'Staff' for new adds
+        String worksAsSql = """
+        INSERT INTO works_as (ssn, role_name, hotel_id)
+        VALUES (:ssn, 'Staff', :hotelId)
+        ON CONFLICT (ssn, role_name, hotel_id) DO NOTHING
+    """;
+        jdbcTemplate.update(worksAsSql, params);
+    }
+
 }
