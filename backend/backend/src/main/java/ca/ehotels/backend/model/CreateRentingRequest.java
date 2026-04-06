@@ -9,6 +9,7 @@ public class CreateRentingRequest {
     private Integer roomNumber;
     private LocalDate startDate;
     private LocalDate endDate;
+    private Boolean isPaid;
 
     public String getSsn() {
         return ssn;
@@ -57,4 +58,8 @@ public class CreateRentingRequest {
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
+
+    public Boolean getIsPaid() { return isPaid; }
+
+    public void setIsPaid(Boolean isPaid) { this.isPaid = isPaid; }
 }

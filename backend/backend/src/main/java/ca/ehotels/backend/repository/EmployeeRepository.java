@@ -131,6 +131,8 @@ public class EmployeeRepository {
                 driving_license_number,
                 start_datetime,
                 end_datetime,
+                is_paid,
+                paid_on,
                 customer_name_snapshot,
                 hotel_name_snapshot,
                 area_snapshot,
@@ -144,21 +146,23 @@ public class EmployeeRepository {
                 c.driving_license_number,
                 :startDatetime,
                 :endDatetime,
+                :isPaid,
+                CASE WHEN :isPaid = TRUE THEN CURRENT_TIMESTAMP ELSE NULL END,
                 c.first_name || ' ' || c.last_name,
                 h.hotel_name,
                 h.area,
                 r.price
             FROM customer c
             JOIN room r
-              ON r.hotel_id = :hotelId
-             AND r.room_number = :roomNumber
+            ON r.hotel_id = :hotelId
+            AND r.room_number = :roomNumber
             JOIN hotel h
-              ON h.hotel_id = r.hotel_id
+            ON h.hotel_id = r.hotel_id
             JOIN works_as w
-              ON w.hotel_id = h.hotel_id
-             AND w.ssn = :ssn
+            ON w.hotel_id = h.hotel_id
+            AND w.ssn = :ssn
             WHERE c.driving_license_number = :drivingLicenseNumber
-            """;
+        """;
 
         LocalDateTime startDateTime = request.getStartDate().atTime(15, 0);
         LocalDateTime endDateTime = request.getEndDate().atTime(11, 0);
@@ -169,7 +173,8 @@ public class EmployeeRepository {
                 .addValue("hotelId", request.getHotelId())
                 .addValue("roomNumber", request.getRoomNumber())
                 .addValue("startDatetime", Timestamp.valueOf(startDateTime))
-                .addValue("endDatetime", Timestamp.valueOf(endDateTime));
+                .addValue("endDatetime", Timestamp.valueOf(endDateTime))
+                .addValue("isPaid", request.getIsPaid() != null && request.getIsPaid());
 
         return jdbcTemplate.update(sql, params);
     }
