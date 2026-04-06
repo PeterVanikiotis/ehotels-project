@@ -361,6 +361,13 @@
             Add new customer
         </button>
 
+        <div class="field" style="margin-top: 12px;">
+            <label style="font-weight: normal;">
+                <input type="checkbox" id="paymentCheckbox" style="margin-right: 8px;">
+                Confirm payment received
+            </label>
+        </div>
+
         <div class="modal-actions">
             <button id="confirmRentingButton" type="button">Confirm Renting</button>
         </div>
@@ -640,6 +647,14 @@
     // open modal
     document.getElementById("openEditEmployeeModalButton").addEventListener("click", () => {
         document.getElementById("editEmployeeModal").style.display = "flex";
+    });
+
+    document.getElementById("openCreateCustomerModalButton").addEventListener("click", () => {
+        document.getElementById("createCustomerModal").style.display = "flex";
+    });
+
+    document.getElementById("closeCreateCustomerModal").addEventListener("click", () => {
+        document.getElementById("createCustomerModal").style.display = "none";
     });
 
     document.getElementById("closeEditEmployeeModal").addEventListener("click", () => {
@@ -949,6 +964,15 @@
 
             showMessage("Customer created!", "success");
             document.getElementById("licenseNumber").value = drivingLicenseNumber;
+
+            document.getElementById("newCustomerLicense").value = "";
+            document.getElementById("newCustomerFirstName").value = "";
+            document.getElementById("newCustomerLastName").value = "";
+            document.getElementById("newCustomerStreetName").value = "";
+            document.getElementById("newCustomerStreetNumber").value = "";
+            document.getElementById("newCustomerPostalCode").value = "";
+            document.getElementById("newCustomerPhone").value = "";
+
             document.getElementById("createCustomerModal").style.display = "none";
 
         } catch (err) {
@@ -1152,6 +1176,12 @@
         const drivingLicenseNumber = document.getElementById("licenseNumber").value.trim();
         const startDate = startDateInput.value;
         const endDate = endDateInput.value;
+        const isPaid = document.getElementById("paymentCheckbox").checked;
+
+        if (!isPaid) {
+            showMessage("Payment must be confirmed before creating a renting.", "error");
+            return;
+        }
 
         if (!selectedRoom) {
             showMessage("No room selected.", "error");
@@ -1164,6 +1194,8 @@
         }
 
         try {
+            const isPaid = document.getElementById("paymentCheckbox").checked;
+
             const response = await fetch("/api/employee/rent", {
                 method: "POST",
                 headers: {
@@ -1175,7 +1207,8 @@
                     hotelId: selectedRoom.hotelId,
                     roomNumber: selectedRoom.roomNumber,
                     startDate: startDate,
-                    endDate: endDate
+                    endDate: endDate,
+                    isPaid: isPaid
                 })
             });
 
