@@ -922,10 +922,7 @@ INSERT INTO booking_archive (booking_id, driving_license_number, hotel_id, room_
 VALUES
     (1, 'DL00001ON', 1, 101, '2026-04-10', '2026-04-12', '2026-04-10 15:00:00', '2026-04-12 11:00:00', 'Emma Taylor', 'Maple Downtown Hotel', 'Downtown Ottawa', 170, CURRENT_TIMESTAMP),
     (2, 'DL00002ON', 2, 102, '2026-04-11', '2026-04-13', '2026-04-11 15:00:00', '2026-04-13 11:00:00', 'Noah Anderson', 'Maple ByWard Hotel', 'ByWard Market', 215, CURRENT_TIMESTAMP),
-    (3, 'DL00003ON', 3, 103, '2026-04-12', '2026-04-14', '2026-04-12 15:00:00', '2026-04-14 11:00:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260, CURRENT_TIMESTAMP),
-    (10, 'DL00010ON', 10, 105, '2026-04-19', '2026-04-21', '2026-04-19 15:00:00', '2026-04-21 11:00:00', 'Ethan Allen', 'Aurora ByWard Hotel', 'ByWard Market', 300, CURRENT_TIMESTAMP),
-    (11, 'DL00011ON', 11, 101, '2026-04-20', '2026-04-22', '2026-04-20 15:00:00', '2026-04-22 11:00:00', 'Charlotte Scott', 'Aurora Kanata Hotel', 'Kanata', 210, CURRENT_TIMESTAMP),
-    (12, 'DL00012ON', 12, 102, '2026-04-21', '2026-04-23', '2026-04-21 15:00:00', '2026-04-23 11:00:00', 'Benjamin Hill', 'Aurora Gatineau Hotel', 'Gatineau Core', 215, CURRENT_TIMESTAMP);
+    (3, 'DL00003ON', 3, 103, '2026-04-12', '2026-04-14', '2026-04-12 15:00:00', '2026-04-14 11:00:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260, CURRENT_TIMESTAMP);
 
 INSERT INTO renting (ssn, hotel_id, room_number, booking_id, driving_license_number, start_datetime, end_datetime, actual_check_in_time, actual_check_out_time, is_paid, paid_on, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
 VALUES

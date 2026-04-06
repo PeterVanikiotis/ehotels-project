@@ -68,7 +68,6 @@ public class CustomerSearchRepository {
                     FROM booking b
                     WHERE b.hotel_id = r.hotel_id
                       AND b.room_number = r.room_number
-                      AND b.archive_status = FALSE
                       AND b.start_day < :endDate
                       AND b.end_day > :startDate
               )
@@ -77,7 +76,6 @@ public class CustomerSearchRepository {
                     FROM renting rt
                     WHERE rt.hotel_id = r.hotel_id
                       AND rt.room_number = r.room_number
-                      AND rt.archive_status = FALSE
                       AND rt.start_datetime::date < :endDate
                       AND rt.end_datetime::date > :startDate
               )
@@ -162,7 +160,6 @@ public class CustomerSearchRepository {
             FROM booking b
             WHERE b.hotel_id = v.hotel_id
               AND b.room_number = v.room_number
-              AND b.archive_status = FALSE
               AND b.start_day < :endDate
               AND b.end_day > :startDate
         )
@@ -171,7 +168,6 @@ public class CustomerSearchRepository {
             FROM renting rt
             WHERE rt.hotel_id = v.hotel_id
               AND rt.room_number = v.room_number
-              AND rt.archive_status = FALSE
               AND rt.start_datetime::date < :endDate
               AND rt.end_datetime::date > :startDate
         )

@@ -250,8 +250,8 @@ CREATE TABLE IF NOT EXISTS customer_phone (
 
 -- Booking table
 CREATE TABLE IF NOT EXISTS booking (
-                                       booking_id SERIAL PRIMARY KEY,
-                                       driving_license_number VARCHAR(50) NOT NULL,
+    booking_id SERIAL PRIMARY KEY,
+    driving_license_number VARCHAR(50) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
     start_day DATE NOT NULL,
@@ -287,8 +287,8 @@ CREATE TABLE IF NOT EXISTS booking (
 
 -- Booking archive table
 CREATE TABLE IF NOT EXISTS booking_archive (
-                                               booking_id INT PRIMARY KEY,
-                                               driving_license_number VARCHAR(50) NOT NULL,
+    booking_id INT PRIMARY KEY,
+    driving_license_number VARCHAR(50) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
     start_day DATE NOT NULL,
@@ -317,7 +317,7 @@ CREATE TABLE IF NOT EXISTS renting (
     ssn VARCHAR(20) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
-    booking_id INT,
+    booking_id INT UNIQUE,
     driving_license_number VARCHAR(50) NOT NULL,
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
@@ -342,13 +342,11 @@ CREATE TABLE IF NOT EXISTS renting (
     REFERENCES room(hotel_id, room_number)
     ON DELETE RESTRICT,
 
-    booking_id INT UNIQUE,
-
     -- Booking must exist
     CONSTRAINT fk_renting_booking
     FOREIGN KEY (booking_id)
     REFERENCES booking(booking_id)
-    ON DELETE RESTRICT,
+    ON DELETE SET NULL,
 
     -- Customer must exist
     CONSTRAINT fk_renting_customer
