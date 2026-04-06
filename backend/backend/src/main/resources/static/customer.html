@@ -406,6 +406,9 @@
 
     // load customer info
     document.getElementById("loadCustomerButton").addEventListener("click", async () => {
+        // --- STEP 1: Clear any previous error/info message immediately ---
+        message.style.display = "none";
+
         const license = document.getElementById("editLicenseInput").value.trim();
 
         if (!license) {
@@ -415,6 +418,13 @@
 
         try {
             const res = await fetch(`/api/customer/get?license=${encodeURIComponent(license)}`);
+
+            if (!res.ok) {
+                //Handle the 404 error
+                const errorText = await res.text();
+                throw new Error(errorText || "Customer not found");
+            }
+
             const data = await res.json();
 
             document.getElementById("editFirstName").value = data.firstName;
@@ -425,8 +435,13 @@
 
             document.getElementById("editCustomerForm").style.display = "block";
 
+            // --- STEP 2: Show success and make it disappear after 2.5 seconds ---
+            showMessage("Customer profile loaded!", "success", true);
+
         } catch (err) {
-            showMessage("Customer not found", "error");
+            console.error(err);
+            showMessage(err.message, "error");
+            document.getElementById("editCustomerForm").style.display = "none";
         }
     });
 

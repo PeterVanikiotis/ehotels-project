@@ -39,26 +39,25 @@ public class CustomerRepository {
     }
 
     public CustomerDto getCustomer(String license) {
-        String sql = """
-        SELECT *
-        FROM customer
-        WHERE driving_license_number = :license
-    """;
-
-        return jdbcTemplate.queryForObject(
-                sql,
-                new MapSqlParameterSource("license", license),
-                (rs, rowNum) -> {
-                    CustomerDto c = new CustomerDto();
-                    c.setDrivingLicenseNumber(rs.getString("driving_license_number"));
-                    c.setFirstName(rs.getString("first_name"));
-                    c.setLastName(rs.getString("last_name"));
-                    c.setStreetName(rs.getString("street_name"));
-                    c.setStreetNumber(rs.getString("street_number"));
-                    c.setPostalCode(rs.getString("postal_code"));
-                    return c;
-                }
-        );
+        String sql = "SELECT * FROM customer WHERE driving_license_number = :license";
+        try {
+            return jdbcTemplate.queryForObject(
+                    sql,
+                    new MapSqlParameterSource("license", license),
+                    (rs, rowNum) -> {
+                        CustomerDto c = new CustomerDto();
+                        c.setDrivingLicenseNumber(rs.getString("driving_license_number"));
+                        c.setFirstName(rs.getString("first_name"));
+                        c.setLastName(rs.getString("last_name"));
+                        c.setStreetName(rs.getString("street_name"));
+                        c.setStreetNumber(rs.getString("street_number"));
+                        c.setPostalCode(rs.getString("postal_code"));
+                        return c;
+                    }
+            );
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return null; // Return null so the Controller can send a clean 404
+        }
     }
 
     @Transactional
