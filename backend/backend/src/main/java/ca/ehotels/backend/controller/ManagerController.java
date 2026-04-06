@@ -68,8 +68,8 @@ public class ManagerController {
     }
 
     @GetMapping("/customers")
-    public List<CustomerDto> getCustomers() {
-        return customerRepository.getAllCustomers();
+    public List<CustomerDto> getCustomers(@RequestParam Integer hotelId) {
+        return customerRepository.getCustomersByHotel(hotelId);
     }
 
     @DeleteMapping("/customer/delete")
