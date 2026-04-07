@@ -909,34 +909,34 @@ VALUES
     ('DL00024ON', '613-700-1023'),
     ('DL00025ON', '613-700-1024');
 
-INSERT INTO booking (booking_id, driving_license_number, hotel_id, room_number, start_day, end_day, check_in_time, check_out_time, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
-VALUES
-    (4, 'DL00004ON', 4, 104, '2026-04-13', '2026-04-15', '2026-04-13 15:00:00', NULL, 'Liam Jackson', 'Maple Gatineau Hotel', 'Gatineau Core', 275),
-    (5, 'DL00005ON', 5, 105, '2026-04-14', '2026-04-16', '2026-04-14 15:00:00', NULL, 'Sophia White', 'Maple Old Hotel', 'Old Montreal', 320),
-    (6, 'DL00006ON', 6, 101, '2026-04-15', '2026-04-17', '2026-04-15 15:00:00', NULL, 'Mason Harris', 'Maple North Hotel', 'North York', 170),
-    (7, 'DL00007ON', 7, 102, '2026-04-16', '2026-04-18', NULL, NULL, 'Isabella Martin', 'Maple Burnaby Hotel', 'Burnaby', 215),
-    (8, 'DL00008ON', 8, 103, '2026-04-17', '2026-04-19', NULL, NULL, 'Lucas Thompson', 'Maple Midtown Hotel', 'Midtown Manhattan', 260),
-    (9, 'DL00009ON', 9, 104, '2026-04-18', '2026-04-20', NULL, NULL, 'Mia Moore', 'Aurora Downtown Hotel', 'Downtown Ottawa', 255);
+INSERT INTO booking (booking_id,driving_license_number,hotel_id,room_number,start_day,end_day,check_in_time,check_out_time,customer_name_snapshot,hotel_name_snapshot,area_snapshot,room_price_snapshot) VALUES
+    (10,'DL00007ON',7,102,'2026-04-16','2026-04-18','2026-04-16 15:00:00','2026-04-18 11:00:00','Isabella Martin','Maple Burnaby Hotel','Burnaby',215),
+    (11,'DL00008ON',8,103,'2026-04-17','2026-04-19','2026-04-17 15:00:00','2026-04-19 11:00:00','Lucas Thompson','Maple Midtown Hotel','Midtown Manhattan',260),
+    (12,'DL00009ON',9,104,'2026-04-18','2026-04-20','2026-04-18 15:00:00','2026-04-20 11:00:00','Mia Moore','Aurora Downtown Hotel','Downtown Ottawa',255);
 
-INSERT INTO booking_archive (booking_id, driving_license_number, hotel_id, room_number, start_day, end_day, check_in_time, check_out_time, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot, created_at)
-VALUES
-    (1, 'DL00001ON', 1, 101, '2026-04-10', '2026-04-12', '2026-04-10 15:00:00', '2026-04-12 11:00:00', 'Emma Taylor', 'Maple Downtown Hotel', 'Downtown Ottawa', 170, CURRENT_TIMESTAMP),
-    (2, 'DL00002ON', 2, 102, '2026-04-11', '2026-04-13', '2026-04-11 15:00:00', '2026-04-13 11:00:00', 'Noah Anderson', 'Maple ByWard Hotel', 'ByWard Market', 215, CURRENT_TIMESTAMP),
-    (3, 'DL00003ON', 3, 103, '2026-04-12', '2026-04-14', '2026-04-12 15:00:00', '2026-04-14 11:00:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260, CURRENT_TIMESTAMP);
+INSERT INTO booking_archive (booking_id,driving_license_number,hotel_id,room_number,start_day,end_day,check_in_time,check_out_time,customer_name_snapshot,hotel_name_snapshot,area_snapshot,room_price_snapshot,created_at) VALUES
+    (1,'DL00001ON',1,101,'2026-04-10','2026-04-12','2026-04-10 15:00:00','2026-04-12 11:00:00','Emma Taylor','Maple Downtown Hotel','Downtown Ottawa',170,CURRENT_TIMESTAMP),
+    (2,'DL00002ON',2,102,'2026-04-11','2026-04-13','2026-04-11 15:00:00','2026-04-13 11:00:00','Noah Anderson','Maple ByWard Hotel','ByWard Market',215,CURRENT_TIMESTAMP),
+    (3,'DL00003ON',3,103,'2026-04-12','2026-04-14','2026-04-12 15:00:00','2026-04-14 11:00:00','Olivia Thomas','Maple Kanata Hotel','Kanata',260,CURRENT_TIMESTAMP),
+    (4,'DL00004ON',4,104,'2026-04-13','2026-04-15','2026-04-13 15:00:00',NULL,'Liam Jackson','Maple Gatineau Hotel','Gatineau Core',275,CURRENT_TIMESTAMP),
+    (5,'DL00005ON',5,105,'2026-04-14','2026-04-16','2026-04-14 15:00:00',NULL,'Sophia White','Maple Old Hotel','Old Montreal',320,CURRENT_TIMESTAMP),
+    (6,'DL00006ON',6,101,'2026-04-15','2026-04-17','2026-04-15 15:00:00',NULL,'Mason Harris','Maple North Hotel','North York',170,CURRENT_TIMESTAMP),
+    (7,'DL00013ON',20,105,'2026-05-01','2026-05-03','2026-05-01 16:00:00',NULL,'Amelia Adams','Holiday Gatineau Hotel','Gatineau Core',300,CURRENT_TIMESTAMP),
+    (8,'DL00014ON',21,104,'2026-05-02','2026-05-04','2026-05-02 16:00:00',NULL,'Jacob Baker','Holiday Old Hotel','Old Montreal',295,CURRENT_TIMESTAMP),
+    (9,'DL00015ON',22,103,'2026-05-03','2026-05-05','2026-05-03 16:00:00',NULL,'Ella Nelson','Holiday North Hotel','North York',220,CURRENT_TIMESTAMP);
 
-INSERT INTO renting (ssn, hotel_id, room_number, booking_id, driving_license_number, start_datetime, end_datetime, actual_check_in_time, actual_check_out_time, is_paid, paid_on, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
-VALUES
+INSERT INTO renting (ssn,hotel_id,room_number,booking_id,driving_license_number,start_datetime,end_datetime,actual_check_in_time,actual_check_out_time,is_paid,paid_on,customer_name_snapshot,hotel_name_snapshot,area_snapshot,room_price_snapshot) VALUES
     ('900000014',4,104,4,'DL00004ON','2026-04-13 15:00:00','2026-04-15 11:00:00','2026-04-13 15:18:00',NULL,TRUE,'2026-04-13 15:10:00','Liam Jackson','Maple Gatineau Hotel','Gatineau Core',275),
-    ('900000018',5,105,5,'DL00005ON','2026-04-14 15:00:00','2026-04-16 11:00:00','2026-04-14 15:05:00',NULL, TRUE,'2026-04-14 15:10:00','Sophia White','Maple Old Hotel','Old Montreal',320),
+    ('900000018',5,105,5,'DL00005ON','2026-04-14 15:00:00','2026-04-16 11:00:00','2026-04-14 15:05:00',NULL,TRUE,'2026-04-14 15:10:00','Sophia White','Maple Old Hotel','Old Montreal',320),
     ('900000022',6,101,6,'DL00006ON','2026-04-15 15:00:00','2026-04-17 11:00:00','2026-04-15 15:22:00',NULL,TRUE,'2026-04-15 15:10:00','Mason Harris','Maple North Hotel','North York',170),
     ('900000078',20,105,7,'DL00013ON','2026-05-01 16:00:00','2026-05-03 11:00:00','2026-05-01 16:14:00',NULL,TRUE,'2026-05-01 16:20:00','Amelia Adams','Holiday Gatineau Hotel','Gatineau Core',300),
     ('900000082',21,104,8,'DL00014ON','2026-05-02 16:00:00','2026-05-04 11:00:00','2026-05-02 16:30:00',NULL,TRUE,'2026-05-02 16:30:00','Jacob Baker','Holiday Old Hotel','Old Montreal',295),
     ('900000086',22,103,9,'DL00015ON','2026-05-03 16:00:00','2026-05-05 11:00:00','2026-05-03 16:11:00',NULL,TRUE,'2026-05-03 16:20:00','Ella Nelson','Holiday North Hotel','North York',220);
-INSERT INTO renting_archive (renting_id, ssn,  hotel_id, room_number, booking_id, driving_license_number, start_datetime, end_datetime, actual_check_in_time, actual_check_out_time, is_paid, paid_on, customer_name_snapshot, hotel_name_snapshot, area_snapshot, room_price_snapshot)
-VALUES
-    (1, '900000002', 1, 101, 1, 'DL00001ON', '2026-04-10 15:00:00', '2026-04-12 11:00:00', '2026-04-10 15:12:00', '2026-04-12 10:48:00', TRUE, '2026-04-10 15:10:00', 'Emma Taylor', 'Maple Downtown Hotel', 'Downtown Ottawa', 170),
-    (2, '900000006', 2, 102, 2, 'DL00002ON', '2026-04-11 15:00:00', '2026-04-13 11:00:00', '2026-04-11 15:25:00', '2026-04-13 10:55:00', TRUE, '2026-04-11 15:10:00', 'Noah Anderson', 'Maple ByWard Hotel', 'ByWard Market', 215),
-    (3, '900000010', 3, 103, 3, 'DL00003ON', '2026-04-12 15:00:00', '2026-04-14 11:00:00', '2026-04-12 15:08:00', '2026-04-14 10:50:00', TRUE, '2026-04-12 15:10:00', 'Olivia Thomas', 'Maple Kanata Hotel', 'Kanata', 260);
+
+INSERT INTO renting_archive (renting_id,ssn,hotel_id,room_number,booking_id,driving_license_number,start_datetime,end_datetime,actual_check_in_time,actual_check_out_time,is_paid,paid_on,customer_name_snapshot,hotel_name_snapshot,area_snapshot,room_price_snapshot) VALUES
+    (1,'900000002',1,101,1,'DL00001ON','2026-04-10 15:00:00','2026-04-12 11:00:00','2026-04-10 15:12:00','2026-04-12 10:48:00',TRUE,'2026-04-10 15:10:00','Emma Taylor','Maple Downtown Hotel','Downtown Ottawa',170),
+    (2,'900000006',2,102,2,'DL00002ON','2026-04-11 15:00:00','2026-04-13 11:00:00','2026-04-11 15:25:00','2026-04-13 10:55:00',TRUE,'2026-04-11 15:10:00','Noah Anderson','Maple ByWard Hotel','ByWard Market',215),
+    (3,'900000010',3,103,3,'DL00003ON','2026-04-12 15:00:00','2026-04-14 11:00:00','2026-04-12 15:08:00','2026-04-14 10:50:00',TRUE,'2026-04-12 15:10:00','Olivia Thomas','Maple Kanata Hotel','Kanata',260);
 
 -- Keep serial sequences aligned after explicit population.
 SELECT setval(pg_get_serial_sequence('hotel_chain', 'central_office_id'), COALESCE((SELECT MAX(central_office_id) FROM hotel_chain), 1), TRUE);

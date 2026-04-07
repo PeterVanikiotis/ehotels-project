@@ -626,9 +626,15 @@
     }
 
     async function loadAvailableRoomsPerArea(startDateValue, endDateValue) {
-        const response = await fetch(
-            `/api/customer/available-rooms-per-area?startDate=${encodeURIComponent(startDateValue)}&endDate=${encodeURIComponent(endDateValue)}`
-        );
+        const params = new URLSearchParams();
+        params.append("startDate", startDateValue);
+        params.append("endDate", endDateValue);
+
+        if (area.value) {
+            params.append("area", area.value);
+        }
+
+        const response = await fetch(`/api/customer/available-rooms-per-area?${params.toString()}`);
 
         if (!response.ok) {
             const errorText = await response.text();

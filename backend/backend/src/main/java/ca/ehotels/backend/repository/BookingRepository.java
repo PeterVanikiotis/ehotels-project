@@ -65,14 +65,30 @@ public class BookingRepository {
     public int createBooking(CreateBookingRequest request) {
         String sql = """
         INSERT INTO booking (
-            driving_license_number, hotel_id, room_number,
-            start_day, end_day, customer_name_snapshot,
-            hotel_name_snapshot, area_snapshot, room_price_snapshot
+            driving_license_number,
+            hotel_id,
+            room_number,
+            start_day,
+            end_day,
+            check_in_time,
+            check_out_time,
+            customer_name_snapshot,
+            hotel_name_snapshot,
+            area_snapshot,
+            room_price_snapshot
         )
         SELECT
-            c.driving_license_number, r.hotel_id, r.room_number,
-            :startDate, :endDate, (c.first_name || ' ' || c.last_name),
-            h.hotel_name, h.area, r.price
+            c.driving_license_number,
+            r.hotel_id,
+            r.room_number,
+            :startDate,
+            :endDate,
+            :startDate::timestamp + INTERVAL '15 hours',
+            :endDate::timestamp + INTERVAL '11 hours',
+            (c.first_name || ' ' || c.last_name),
+            h.hotel_name,
+            h.area,
+            r.price
         FROM customer c
         JOIN room r ON r.hotel_id = :hotelId AND r.room_number = :roomNumber
         JOIN hotel h ON h.hotel_id = r.hotel_id
@@ -93,7 +109,6 @@ public class BookingRepository {
             }
             return rows;
         } catch (org.springframework.dao.DataAccessException e) {
-            // Relays "Room already booked" or "Room is damaged" messages from your triggers
             String dbMessage = e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage();
             throw new RuntimeException(dbMessage);
         }
