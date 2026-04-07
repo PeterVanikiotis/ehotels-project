@@ -149,37 +149,45 @@ public class CustomerSearchRepository {
         return jdbcTemplate.query(sql.toString(), params, new HotelCapacityRowMapper());
     }
 
-    public List<AvailableRoomsPerAreaDto> getAvailableRoomsPerArea(LocalDate startDate, LocalDate endDate) {
-        String sql = """
-        SELECT
-            v.area,
-            COUNT(*) AS available_rooms
-        FROM available_rooms_per_area_base v
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM booking b
-            WHERE b.hotel_id = v.hotel_id
-              AND b.room_number = v.room_number
-              AND b.start_day < :endDate
-              AND b.end_day > :startDate
-        )
-          AND NOT EXISTS (
-            SELECT 1
-            FROM renting rt
-            WHERE rt.hotel_id = v.hotel_id
-              AND rt.room_number = v.room_number
-              AND rt.start_datetime::date < :endDate
-              AND rt.end_datetime::date > :startDate
-        )
-        GROUP BY v.area
-        ORDER BY v.area
-        """;
+    public List<AvailableRoomsPerAreaDto> getAvailableRoomsPerArea(LocalDate startDate, LocalDate endDate, String area) {
+        StringBuilder sql = new StringBuilder("""
+    SELECT
+        v.area,
+        COUNT(*) AS available_rooms
+    FROM available_rooms_per_area_base v
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM booking b
+        WHERE b.hotel_id = v.hotel_id
+          AND b.room_number = v.room_number
+          AND b.start_day < :endDate
+          AND b.end_day > :startDate
+    )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM renting rt
+        WHERE rt.hotel_id = v.hotel_id
+          AND rt.room_number = v.room_number
+          AND rt.start_datetime::date < :endDate
+          AND rt.end_datetime::date > :startDate
+    )
+    """);
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("startDate", startDate)
                 .addValue("endDate", endDate);
 
-        return jdbcTemplate.query(sql, params, new AvailableRoomsPerAreaRowMapper());
+        if (area != null && !area.isBlank()) {
+            sql.append(" AND LOWER(TRIM(v.area)) = LOWER(TRIM(:area))");
+            params.addValue("area", area.trim());
+        }
+
+        sql.append("""
+    GROUP BY v.area
+    ORDER BY v.area
+    """);
+
+        return jdbcTemplate.query(sql.toString(), params, new AvailableRoomsPerAreaRowMapper());
     }
 
     public List<String> getAreas() {

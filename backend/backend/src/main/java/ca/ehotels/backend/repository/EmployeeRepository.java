@@ -221,66 +221,101 @@ public class EmployeeRepository {
 
     @Transactional
     public int convertBookingToRenting(ConvertBookingRequest request) {
-        String archiveBookingSql = """
-            UPDATE booking
-            SET check_in_time = CURRENT_TIMESTAMP
-            WHERE booking_id = :bookingId
-            """;
+
+        String insertArchiveSql = """
+        INSERT INTO booking_archive (
+            booking_id,
+            driving_license_number,
+            hotel_id,
+            room_number,
+            start_day,
+            end_day,
+            check_in_time,
+            check_out_time,
+            customer_name_snapshot,
+            hotel_name_snapshot,
+            area_snapshot,
+            room_price_snapshot,
+            created_at
+        )
+        SELECT
+            b.booking_id,
+            b.driving_license_number,
+            b.hotel_id,
+            b.room_number,
+            b.start_day,
+            b.end_day,
+            b.start_day::timestamp + INTERVAL '15 hours',
+            b.end_day::timestamp + INTERVAL '11 hours',
+            b.customer_name_snapshot,
+            b.hotel_name_snapshot,
+            b.area_snapshot,
+            b.room_price_snapshot,
+            b.created_at
+        FROM booking b
+        JOIN works_as w ON w.hotel_id = b.hotel_id
+        WHERE b.booking_id = :bookingId
+        AND w.ssn = :ssn
+    """;
 
         String insertRentingSql = """
-            INSERT INTO renting (
-                ssn,
-                hotel_id,
-                room_number,
-                booking_id,
-                driving_license_number,
-                start_datetime,
-                end_datetime,
-                actual_check_in_time,
-                is_paid,
-                paid_on,
-                customer_name_snapshot,
-                hotel_name_snapshot,
-                area_snapshot,
-                room_price_snapshot
-            )
-            SELECT
-                :ssn,
-                b.hotel_id,
-                b.room_number,
-                b.booking_id,
-                b.driving_license_number,
-                b.start_day::timestamp + INTERVAL '15 hours',
-                b.end_day::timestamp + INTERVAL '11 hours',
-                CURRENT_TIMESTAMP,
-                TRUE,
-                CURRENT_TIMESTAMP,
-                b.customer_name_snapshot,
-                b.hotel_name_snapshot,
-                b.area_snapshot,
-                b.room_price_snapshot
-            FROM booking b
-            JOIN works_as w
-              ON w.hotel_id = b.hotel_id
-            WHERE b.booking_id = :bookingId
-              AND w.ssn = :ssn
-            """;
+        INSERT INTO renting (
+            ssn,
+            hotel_id,
+            room_number,
+            booking_id,
+            driving_license_number,
+            start_datetime,
+            end_datetime,
+            actual_check_in_time,
+            is_paid,
+            paid_on,
+            customer_name_snapshot,
+            hotel_name_snapshot,
+            area_snapshot,
+            room_price_snapshot
+        )
+        SELECT
+            :ssn,
+            ba.hotel_id,
+            ba.room_number,
+            ba.booking_id,
+            ba.driving_license_number,
+            ba.start_day::timestamp + INTERVAL '15 hours',
+            ba.end_day::timestamp + INTERVAL '11 hours',
+            CURRENT_TIMESTAMP,
+            TRUE,
+            CURRENT_TIMESTAMP,
+            ba.customer_name_snapshot,
+            ba.hotel_name_snapshot,
+            ba.area_snapshot,
+            ba.room_price_snapshot
+        FROM booking_archive ba
+        WHERE ba.booking_id = :bookingId
+    """;
+
+        String deleteBookingSql = """
+        DELETE FROM booking
+        WHERE booking_id = :bookingId
+    """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ssn", request.getSsn())
                 .addValue("bookingId", request.getBookingId());
 
-        int archived = jdbcTemplate.update(archiveBookingSql, params);
+        int archived = jdbcTemplate.update(insertArchiveSql, params);
 
         if (archived == 0) {
-            return 0;
+            throw new RuntimeException("Failed to archive booking.");
         }
 
         int inserted = jdbcTemplate.update(insertRentingSql, params);
 
         if (inserted == 0) {
-            throw new RuntimeException("Could not create renting from booking.");
+            throw new RuntimeException("Failed to create renting.");
         }
+
+        jdbcTemplate.update(deleteBookingSql, params);
 
         return inserted;
     }

@@ -67,13 +67,14 @@ public class CustomerController {
     @GetMapping("/available-rooms-per-area")
     public ResponseEntity<?> getAvailableRoomsPerArea(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String area
     ) {
         if (!endDate.isAfter(startDate)) {
             return ResponseEntity.badRequest().body("End date must be after start date.");
         }
 
-        List<AvailableRoomsPerAreaDto> results = customerSearchRepository.getAvailableRoomsPerArea(startDate, endDate);
+        List<AvailableRoomsPerAreaDto> results = customerSearchRepository.getAvailableRoomsPerArea(startDate, endDate, area);
         return ResponseEntity.ok(results);
     }
 

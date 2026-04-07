@@ -330,50 +330,42 @@ CREATE TABLE IF NOT EXISTS renting (
     area_snapshot VARCHAR(100) NOT NULL,
     room_price_snapshot NUMERIC(10,2) NOT NULL,
 
-    -- Employee must exist
     CONSTRAINT fk_renting_employee
     FOREIGN KEY (ssn)
     REFERENCES employee(ssn)
     ON DELETE RESTRICT,
 
-    -- Room must exist
     CONSTRAINT fk_renting_room
     FOREIGN KEY (hotel_id, room_number)
     REFERENCES room(hotel_id, room_number)
     ON DELETE RESTRICT,
 
-    -- Booking must exist
-    CONSTRAINT fk_renting_booking
+    CONSTRAINT fk_renting_booking_archive
     FOREIGN KEY (booking_id)
-    REFERENCES booking(booking_id)
-    ON DELETE SET NULL,
+    REFERENCES booking_archive(booking_id)
+    ON DELETE RESTRICT,
 
-    -- Customer must exist
     CONSTRAINT fk_renting_customer
     FOREIGN KEY (driving_license_number)
     REFERENCES customer(driving_license_number)
     ON DELETE RESTRICT,
 
-    -- End time must be after start time
     CONSTRAINT chk_renting_dates
     CHECK (end_datetime > start_datetime),
 
-    -- Paid date only if paid
     CONSTRAINT chk_renting_paid_on
     CHECK (paid_on IS NULL OR is_paid = TRUE),
 
-    -- Price must be positive
     CONSTRAINT chk_renting_room_price_snapshot
     CHECK (room_price_snapshot > 0)
     );
 
--- Renting archive table
 CREATE TABLE IF NOT EXISTS renting_archive (
     renting_id INT PRIMARY KEY,
     ssn VARCHAR(20) NOT NULL,
     hotel_id INT NOT NULL,
     room_number INT NOT NULL,
-    booking_id INT NOT NULL,
+    booking_id INT,
     driving_license_number VARCHAR(50) NOT NULL,
     start_datetime TIMESTAMP NOT NULL,
     end_datetime TIMESTAMP NOT NULL,
@@ -387,15 +379,17 @@ CREATE TABLE IF NOT EXISTS renting_archive (
     room_price_snapshot NUMERIC(10,2) NOT NULL,
     archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    -- End time must be after start time
+    CONSTRAINT fk_renting_archive_booking_archive
+    FOREIGN KEY (booking_id)
+    REFERENCES booking_archive(booking_id)
+    ON DELETE RESTRICT,
+
     CONSTRAINT chk_renting_archive_dates
     CHECK (end_datetime > start_datetime),
 
-    -- Paid date only if paid
     CONSTRAINT chk_renting_archive_paid_on
     CHECK (paid_on IS NULL OR is_paid = TRUE),
 
-    -- Price must be positive
     CONSTRAINT chk_renting_archive_room_price_snapshot
     CHECK (room_price_snapshot > 0)
     );

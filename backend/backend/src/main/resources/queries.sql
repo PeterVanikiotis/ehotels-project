@@ -31,8 +31,6 @@ WHERE r.room_view_type = 'sea'
   AND hc.chain_name = 'Maple Leaf Hotels'
 ORDER BY h.hotel_name, r.room_number;
 
-
-
 -- =========================================
 -- QUERY 2: Managers in a Hotel Chain
 -- Type: Regular Query
